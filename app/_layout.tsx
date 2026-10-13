@@ -7,7 +7,7 @@ import { DataProvider } from '@/bootstrap/providers/DataProvider';
 import { AppThemeProvider, useAppTheme } from '@/theme/ThemeProvider';
 
 function Navigation() {
-  const { resolvedMode, colors } = useAppTheme();
+  const { colors } = useAppTheme();
   return <>
     <StatusBar hidden />
     <Stack screenOptions={{headerShown:false,contentStyle:{backgroundColor:colors.background}}}>
