@@ -7,7 +7,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function AppThemeProvider({ children }: PropsWithChildren) {
   const system = useColorScheme();
-  const [mode, setMode] = useState<ThemeMode>('system');
+  const [mode, setMode] = useState<ThemeMode>('light');
   const resolvedMode = mode === 'system' ? (system === 'dark' ? 'dark' : 'light') : mode;
   const value = useMemo(() => ({ colors: themes[resolvedMode], mode, resolvedMode, setMode }), [mode, resolvedMode]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
