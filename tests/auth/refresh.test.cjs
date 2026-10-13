@@ -36,7 +36,7 @@ function setup(handler) {
       return true;
     },
   };
-  const file = path.join(__dirname, '../../src/services/api/http.ts');
+  const file = path.join(process.cwd(), 'src/services/api/http.ts');
   const js = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
   }).outputText;
