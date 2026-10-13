@@ -12,7 +12,6 @@ function Navigation() {
     <StatusBar hidden />
     <Stack screenOptions={{headerShown:false,contentStyle:{backgroundColor:colors.background}}}>
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="navigation-lab" options={{presentation:'card'}} />
       <Stack.Screen name="login" options={{presentation:'modal'}} />
       <Stack.Screen name="journeys/[journeyId]" />
       <Stack.Screen name="stages/[stageId]" />
