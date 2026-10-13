@@ -23,7 +23,7 @@ check(Boolean(pkg.dependencies['expo-video']), 'Video dependency missing');
 check(Boolean(pkg.dependencies['react-native-gesture-handler']), 'Gesture dependency missing');
 const source = walk(path.join(root,'src')).filter(p => /\.[jt]sx?$/.test(p));
 for (const file of source) {
- const relative = path.relative(root,file);
+ const relative = path.relative(root,file).split(path.sep).join('/');
  const body = fs.readFileSync(file,'utf8');
  if (/from\s+['"]next(?:\/|['"])/.test(body)) errors.push(`Next.js import in ${relative}`);
  if (/\bwindow\.localStorage\b/.test(body) && !relative.endsWith('src/features/auth/services/deviceInfo.web.ts')) errors.push(`Review window.localStorage usage in ${relative}`);
