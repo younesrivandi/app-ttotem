@@ -2,7 +2,6 @@ import {useMemo,useRef,useState} from 'react';
 import {PanResponder,Pressable,View,type LayoutChangeEvent} from 'react-native';
 import Svg,{Line} from 'react-native-svg';
 import type {Match} from '../engine';
-import {AppText} from '@/components/ui/AppText';
 import {ItemLabel} from './shared';
 import {useAppTheme} from '@/theme/ThemeProvider';
 type Rect={x:number;y:number;width:number;height:number};
@@ -24,5 +23,4 @@ export function MatchingRenderer({sources,targets,matches,onConnect,disabled=fal
  </View>
  <Svg pointerEvents="none" width="100%" height="100%" style={{position:'absolute',left:0,top:0}}>{matches.map(m=>{const a=center('left',`s${m.sourceIndex}`),b=center('right',`t${m.targetIndex}`);return a&&b?<Line key={m.sourceIndex} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={colors.primary} strokeWidth={3}/>:null})}{drag?<Line x1={center('left',`s${drag.source}`)?.x??drag.x} y1={center('left',`s${drag.source}`)?.y??drag.y} x2={drag.x} y2={drag.y} stroke={colors.primary} strokeWidth={2} strokeDasharray="5 4"/>:null}</Svg>
  </View>;
- function setBoard(_v:{width:number;height:number}){/* dimensions are inferred by SVG */}
 }
