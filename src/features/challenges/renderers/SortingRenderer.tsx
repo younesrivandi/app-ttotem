@@ -1,7 +1,7 @@
 import {useMemo} from 'react';
 import {Pressable,View} from 'react-native';
 import {Gesture,GestureDetector} from 'react-native-gesture-handler';
-import Animated,{useAnimatedStyle,useSharedValue,withSpring,runOnJS} from 'react-native-reanimated';
+import Animated,{useAnimatedStyle,useSharedValue,withSpring} from 'react-native-reanimated';
 import {AppText} from '@/components/ui/AppText';
 import {useAppTheme} from '@/theme/ThemeProvider';
 import {ItemLabel} from './shared';
@@ -26,9 +26,10 @@ function SortableRow({value,position,count,disabled,onMove}:SortableRowProps){
   .onEnd(event=>{
    const move=Math.round(event.translationY/SLOT_HEIGHT);
    const destination=clamp(position+move,0,count-1);
-   if(destination!==position){runOnJS(onMove)(position,destination);}
+   if(destination!==position){onMove(position,destination);}
   })
-  .onFinalize(()=>{offset.value=withSpring(0);dragging.value=false;}),[disabled,position,count,onMove,offset,dragging]);
+  .onFinalize(()=>{offset.value=withSpring(0);dragging.value=false;})
+  .runOnJS(true),[disabled,position,count,onMove,offset,dragging]);
  const animatedStyle=useAnimatedStyle(()=>({transform:[{translateY:offset.value}],zIndex:dragging.value?10:0,elevation:dragging.value?7:0,opacity:dragging.value?0.9:1}));
  return <Animated.View style={[{height:ROW_HEIGHT,backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:12,padding:10,flexDirection:'row-reverse',alignItems:'center',gap:8},animatedStyle]}>
   <GestureDetector gesture={gesture}><Animated.View accessible accessibilityRole="adjustable" accessibilityLabel={`جابجایی گزینه ${position+1} با کشیدن`} style={{padding:12,minWidth:42,alignItems:'center',justifyContent:'center'}}><AppText>☰</AppText></Animated.View></GestureDetector>
