@@ -35,7 +35,7 @@ export default function MainTabs() {
   }}>
     <Tabs.Screen name="index" options={{title:'خانه'}} />
     <Tabs.Screen name="journeys/index" options={{title:'سفرها'}} />
-    <Tabs.Screen name="children" options={{title:'کودکان'}} />
+    <Tabs.Screen name="children" options={{title:'کودکان',tabBarStyle:{display:'none'}}} />
     <Tabs.Screen name="parent" options={{title:'والد'}} />
     <Tabs.Screen name="leaderboard" options={{title:'رتبه‌بندی'}} />
   </Tabs>;
