@@ -29,6 +29,7 @@ export function JourneysScreen() {
   const [childId, setChildId] = useState('');
   const [selected, setSelected] = useState(0);
   const selectedId = useRef<string | null>(null);
+  const lastProgressIndex = useRef(-1);
   const initialSelectionFor = useRef('');
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export function JourneysScreen() {
       if (active) {
         const nextId = currentSession().childId ?? '';
         setChildId(previous => {
-          if (previous !== nextId) { selectedId.current = null; initialSelectionFor.current = ''; setSelected(0); }
+          if (previous !== nextId) { selectedId.current = null; initialSelectionFor.current = ''; lastProgressIndex.current = -1; setSelected(0); }
           return nextId;
         });
         setReady(true);
@@ -81,6 +82,7 @@ export function JourneysScreen() {
     const latest = journeys.findIndex(j => j.isLatestSelected);
     const next = existing >= 0 ? existing : latest >= 0 ? latest : 0;
     selectedId.current = journeys[next]?.journeyId ?? null;
+    lastProgressIndex.current = next;
     setSelected(next);
     carouselRef.current?.scrollTo({ index: next, animated: false });
   }, [childId, journeyIds]);
@@ -90,8 +92,14 @@ export function JourneysScreen() {
     const item = journeys[index];
     if (!item || selectedId.current === item.journeyId) return;
     selectedId.current = item.journeyId;
+    lastProgressIndex.current = index;
     setSelected(index);
     if (!item.isLocked && !mutation.isPending) mutation.mutate(item.journeyId);
+  };
+  const handleProgress = (progress: number) => {
+    if (!journeys.length || !Number.isFinite(progress)) return;
+    const index = ((Math.round(progress) % journeys.length) + journeys.length) % journeys.length;
+    if (index !== lastProgressIndex.current) activateIndex(index);
   };
   const selectIndex = (index: number) => {
     if (index < 0 || index >= journeys.length) return;
@@ -154,9 +162,10 @@ export function JourneysScreen() {
                   loop={journeys.length > 1}
                   autoFillData={journeys.length === 2}
                   windowSize={Math.max(5, journeys.length)}
-                  snapMode="nearest"
+                  snapMode="page"
+                  onProgressChange={handleProgress}
                   animation={{ type: 'spring', damping: 20, stiffness: 180 }}
-                  layout={{ type: 'parallax', offset: Math.min(canvasWidth * 0.37, 150), scale: 0.84, adjacentScale: 0.76 }}
+                  layout={{ type: 'parallax', offset: Math.min(canvasWidth * 0.58, 235), scale: 0.84, adjacentScale: 0.76 }}
                   onSnapToItem={index => {
                     activateIndex(index);
                   }}
