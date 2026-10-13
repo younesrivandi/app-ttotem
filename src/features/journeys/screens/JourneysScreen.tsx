@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Image, ImageBackground, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { Image, ImageBackground, Pressable, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Carousel, type CarouselRef } from 'react-native-reanimated-carousel';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppScreen } from '@/components/layout/AppScreen';
@@ -22,7 +23,7 @@ const errorMessage = (e: unknown) => e instanceof Error ? e.message : 'خطای�
 export function JourneysScreen() {
   const router = useRouter();
   const client = useQueryClient();
-  const scrollRef = useRef<ScrollView>(null);
+  const carouselRef = useRef<CarouselRef>(null);
   const { width, height } = useWindowDimensions();
   const [ready, setReady] = useState(false);
   const [childId, setChildId] = useState('');
@@ -82,7 +83,7 @@ export function JourneysScreen() {
     const item = journeys[index];
     if (!item) return;
     selectedId.current = item.journeyId;
-    scrollRef.current?.scrollTo({ x: index * (cardWidth + 12), animated: true });
+    carouselRef.current?.scrollTo({ index, animated: true });
     if (!item.isLocked && !mutation.isPending) mutation.mutate(item.journeyId);
   };
   const open = (index: number) => {
@@ -125,18 +126,29 @@ export function JourneysScreen() {
             journeysQuery.isError ? <ErrorState description={errorMessage(journeysQuery.error)} onRetry={() => { void journeysQuery.refetch(); }} /> :
             journeys.length === 0 ? <EmptyState title="هنوز سفری آماده نشده است" /> :
             <>
-              <ScrollView ref={scrollRef} horizontal showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ alignItems: 'flex-end', gap: 12, paddingHorizontal: (canvasWidth - cardWidth) / 2, paddingVertical: 12 }}
-                snapToInterval={cardWidth + 12} decelerationRate="fast"
-                onMomentumScrollEnd={event => {
-                  const index = Math.round(event.nativeEvent.contentOffset.x / (cardWidth + 12));
-                  if (index !== selected) selectIndex(index);
-                }}
-                accessibilityLabel="فهرست سفرها" style={{ flexGrow: 0 }}>
-                {journeys.map((journey, index) =>
-                  <JourneyCard key={journey.journeyId} journey={journey} index={index} active={index === selected}
-                    width={cardWidth} height={cardHeight} onPress={() => open(index)} />)}
-              </ScrollView>
+              <View accessibilityLabel="فهرست سفرها" style={{ height: cardHeight + 26 }}>
+                <Carousel
+                  key={childId}
+                  ref={carouselRef}
+                  style={{ width: canvasWidth, height: cardHeight + 26, overflow: 'visible' }}
+                  itemSize={cardWidth + 18}
+                  data={journeys}
+                  keyExtractor={item => item.journeyId}
+                  defaultIndex={selected}
+                  loop={journeys.length > 2}
+                  snapMode="nearest"
+                  animation={{ type: 'spring', damping: 20, stiffness: 180 }}
+                  layout={{ type: 'parallax', offset: 55, scale: 0.83, adjacentScale: 0.72 }}
+                  onSnapToItem={index => {
+                    if (index !== selected) selectIndex(index);
+                  }}
+                  renderItem={({ item, index }) =>
+                    <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center', paddingVertical: 10 }}>
+                      <JourneyCard journey={item} index={index} active={index === selected}
+                        width={cardWidth} height={cardHeight} onPress={() => open(index)} />
+                    </View>}
+                />
+              </View>
               <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginVertical: 8 }}>
                 {journeys.map((journey, index) =>
                   <Pressable key={journey.journeyId} accessibilityRole="button" accessibilityLabel={`انتخاب سفر ${index + 1}`}
