@@ -109,16 +109,22 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
         <View style={{ width: NODE_SIZE, height: NODE_SIZE, alignItems: 'center', justifyContent: 'center' }}>
           <Image source={stageArtwork} resizeMode="contain"
             style={{ width: NODE_SIZE, height: NODE_SIZE, opacity: locked ? 0.82 : 1 }} />
-          {(locked || finished) && <View style={{
-            position: 'absolute', top: 8, alignItems: 'center', justifyContent: 'center',
-            width: 38, height: 38, borderRadius: 19,
-            backgroundColor: 'rgba(255,255,255,0.94)',
-            shadowColor: '#302642', shadowOpacity: 0.22, shadowRadius: 4, elevation: 3,
+          {locked && <View pointerEvents="none" style={{
+            position: 'absolute', top: 12, left: (NODE_SIZE - 36) / 2,
+            width: 36, height: 36, borderRadius: 18,
+            alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFDFC',
+            shadowColor: '#302642', shadowOpacity: 0.2, shadowRadius: 4, elevation: 3,
           }}>
-            <AppText weight="700" style={{ fontSize: locked ? 25 : 31,
-              lineHeight: 35, color: '#352C65', textAlign: 'center' }}>
-              {locked ? '🔒' : '✓'}
-            </AppText>
+            <AppText style={{ fontSize: 24, lineHeight: 32, textAlign: 'center' }}>🔒</AppText>
+          </View>}
+          {finished && !locked && <View pointerEvents="none" style={{
+            position: 'absolute', top: NODE_SIZE * 0.55, left: NODE_SIZE * 0.34,
+            width: NODE_SIZE * 0.32, height: NODE_SIZE * 0.29,
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <AppText weight="700" style={{ fontSize: 30, lineHeight: 34,
+              color: '#249B4A', textAlign: 'center',
+              textShadowColor: '#FFFFFF', textShadowRadius: 2 }}>✓</AppText>
           </View>}
         </View>
         <AppText numberOfLines={1} weight="700"
