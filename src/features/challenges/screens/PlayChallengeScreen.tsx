@@ -1,5 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {useRouter} from 'expo-router';
+import {Pressable, View} from 'react-native';
+import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {AppScreen} from '@/components/layout/AppScreen';
 import {AppText} from '@/components/ui/AppText';
@@ -48,7 +50,38 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  case 'voice':return <AppCard><VoiceRecorder key={`${stageId}:${challengeId}`} disabled={sending||solved} referenceAudioUrl={data?.referenceAudioUrl??spec.voiceUrl??data?.audioUrl} onReady={value=>update(s=>({...s,voiceRecording:value}))} onRecordingChange={value=>update(s=>({...s,recording:value}))}/></AppCard>;
  default:return <ErrorState title="نوع چالش پشتیبانی نمی‌شود" description={`نوع دریافتی: ${spec.kind}`}/>;
  }})();
- return <AppScreen contentStyle={{gap:spacing.md}}><AppButton title="بازگشت به چالش‌ها" variant="ghost" onPress={()=>router.replace({pathname:'/stages/[stageId]',params:{stageId}})}/>
+ const orderedChallenges=[...(summary.data?.challenges??[])].sort((a,b)=>(a.order??0)-(b.order??0));
+ const challengeIndex=orderedChallenges.findIndex(item=>item.challengeId===challengeId);
+ const challengeNumber=challengeIndex>=0?challengeIndex+1:1;
+ const challengeTotal=orderedChallenges.length;
+ return <AppScreen contentStyle={{gap:spacing.md,backgroundColor:'#F9F6FE'}}>
+  <View style={{flexDirection:'row',alignItems:'center',gap:10,marginBottom:6}}>
+   <Pressable accessibilityRole="button" accessibilityLabel="بازگشت به چالش‌ها"
+    onPress={()=>router.replace({pathname:'/stages/[stageId]',params:{stageId}})}
+    style={{width:36,height:36,borderRadius:12,backgroundColor:'#FFFFFF',
+     justifyContent:'center',alignItems:'center',shadowColor:'#6A4C83',
+     shadowOpacity:0.14,shadowRadius:8,elevation:3}}>
+    <AppText style={{fontSize:28,lineHeight:32,color:'#382473',textAlign:'center'}}>‹</AppText>
+   </Pressable>
+   <View style={{flex:1,gap:3}}>
+    <View style={{flexDirection:'row-reverse',justifyContent:'space-between',alignItems:'center'}}>
+     <AppText weight="700" style={{fontSize:11,color:'#3C2772',textAlign:'right'}}>چالش {challengeNumber}</AppText>
+     <AppText weight="700" style={{fontSize:11,color:'#15912E',textAlign:'left'}}>
+      {challengeTotal? `${challengeTotal} از ${challengeTotal}` : '—'}
+     </AppText>
+    </View>
+    <View style={{height:7,borderRadius:999,overflow:'hidden'}}>
+     <Svg width="100%" height="100%" viewBox="0 0 300 7" preserveAspectRatio="none">
+      <Defs><LinearGradient id="playHeaderGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+       <Stop offset="0%" stopColor="#A36ADE"/>
+       <Stop offset="55%" stopColor="#C58FA6"/>
+       <Stop offset="100%" stopColor="#FFBA35"/>
+      </LinearGradient></Defs>
+      <Rect width="300" height="7" rx="3.5" fill="url(#playHeaderGradient)"/>
+     </Svg>
+    </View>
+   </View>
+  </View>
  {!ready?<LoadingState title="بررسی نشست کودک…"/>:!enabled?<ErrorState title="ابتدا پروفایل کودک را انتخاب کنید" onRetry={()=>router.replace('/children')}/>:loading?<LoadingState title="دریافت بازی…"/>:challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:spec&&state?<><AppText variant="title" weight="700">{spec.title??'بازی آموزشی'}</AppText><AppText tone="muted">{data?.prompt??spec.prompt??data?.description??spec.instruction??'به پرسش پاسخ بده.'}</AppText>{renderer}{feedback&&!feedback.isCorrect?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}{feedback?.isCorrect?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText><AppButton title="ادامه بازی" onPress={()=>{void proceed(feedback.nextChallengeId).catch(e=>setError(message(e)))}}/></AppCard>:null}{error?<AppText tone="error">{error}</AppText>:null}{!solved&&<AppButton title="ثبت پاسخ" fullWidth loading={sending} disabled={!canSubmit(spec,state)} onPress={()=>{void submit()}}/>}</>:null}
  </AppScreen>;
 }
