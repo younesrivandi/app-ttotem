@@ -10,10 +10,8 @@ type Props = {title: string; note?: string};
 const links = [
   {href:'/' as const,label:'خانه'}, {href:'/login' as const,label:'ورود'},
   {href:'/children' as const,label:'کودکان'}, {href:'/parent' as const,label:'داشبورد والد'},
-  {href:'/journeys' as const,label:'سفرها'}, {href:'/journeys/demo' as const,label:'جزئیات سفر نمونه'},
-  {href:'/stages/demo' as const,label:'مرحله نمونه'}, {href:'/play/demo/demo' as const,label:'بازی نمونه'},
-  {href:'/result/demo' as const,label:'نتیجه نمونه'}, {href:'/leaderboard' as const,label:'رتبه‌بندی'},
-  {href:'/join/demo' as const,label:'عضویت نمونه'}, {href:'/coming-soon' as const,label:'به‌زودی'}, {href:'/ui-kit' as const,label:'نمایش کامپوننت‌ها'}, {href:'/navigation-lab' as const,label:'تست ناوبری'},
+  {href:'/journeys' as const,label:'سفرها'},
+  {href:'/leaderboard' as const,label:'رتبه‌بندی'},
 ];
 export function PlaceholderScreen({title,note}: Props) {
   const {colors,mode,resolvedMode,setMode}=useAppTheme();
