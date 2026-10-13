@@ -27,8 +27,9 @@ export function ChildrenScreen() {
  const authorized=authReady && !!currentSession().parent?.accessToken;
  const query=useQuery({queryKey:queryKeys.children,queryFn:listChildren,enabled:authorized});
  useEffect(()=>{const firstChild=query.data?.[0];if(firstChild && !query.data?.some(c=>c.childProfileId===selected))setSelected(firstChild.childProfileId);},[query.data,selected]);
- const create=useMutation({mutationFn:createChild,onSuccess:async child=>{
- await queryClient.invalidateQueries({queryKey:queryKeys.children});setSelected(child.childProfileId);setFormServerError('');sheet.current?.dismiss();
+ const create=useMutation({mutationFn:createChild,onSuccess:child=>{
+ setSelected(child.childProfileId);setFormServerError('');sheet.current?.dismiss();
+ void queryClient.invalidateQueries({queryKey:queryKeys.children}).catch(()=>{});
  },onError:error=>setFormServerError(message(error))});
  const select=useMutation({mutationFn:chooseChild,onSuccess:()=>router.replace('/coming-soon')});
  const save=async(payload:CreateChildPayload)=>{setFormServerError('');await create.mutateAsync(payload);};
@@ -47,7 +48,7 @@ export function ChildrenScreen() {
    </View>
    <ScrollView style={{flex:1}} keyboardShouldPersistTaps="handled"
      contentContainerStyle={{paddingHorizontal:spacing.md,paddingTop:spacing.sm,paddingBottom:spacing.lg,gap:spacing.md}}>
-    {query.isLoading?<LoadingState title="دریافت فهرست کودکان…"/>:query.isError?<ErrorState description={message(query.error)} onRetry={()=>{void query.refetch();}}/>:
+    {query.isLoading?<LoadingState title="دریافت فهرست کودکان…"/>:query.isError && !query.data?<ErrorState description={message(query.error)} onRetry={()=>{void query.refetch();}}/>:
      query.data?.length===0?<EmptyState title="هنوز پروفایلی اضافه نشده" description="اولین کودک را اضافه کنید."/>:
      query.data?.map((child,i)=><Pressable key={child.childProfileId} accessibilityRole="button"
        accessibilityLabel={`انتخاب کودک ${child.firstName}`}
@@ -64,6 +65,7 @@ export function ChildrenScreen() {
         </View>
        </AppCard>
       </Pressable>)}
+    {query.isError && !!query.data && <AppText tone="error" accessibilityRole="alert">به‌روزرسانی فهرست ناموفق بود؛ اطلاعات قبلی همچنان نمایش داده می‌شود.</AppText>}
     {!!select.error&&<AppText tone="error" accessibilityRole="alert">{message(select.error)}</AppText>}
    </ScrollView>
    <View style={{backgroundColor:colors.surface,borderTopColor:colors.border,borderTopWidth:1,paddingHorizontal:spacing.md,paddingTop:spacing.md,paddingBottom:spacing.md,gap:spacing.sm}}>
