@@ -1,9 +1,9 @@
 import {useEffect,useRef,useState} from 'react';
 import {useRouter} from 'expo-router';
-import {Pressable, View} from 'react-native';
+import {Pressable, ScrollView, View} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
-import {AppScreen} from '@/components/layout/AppScreen';
 import {AppText} from '@/components/ui/AppText';
 import {AppButton} from '@/components/ui/AppButton';
 import {AppCard} from '@/components/ui/AppCard';
@@ -54,7 +54,8 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  const challengeIndex=orderedChallenges.findIndex(item=>item.challengeId===challengeId);
  const challengeNumber=challengeIndex>=0?challengeIndex+1:1;
  const challengeTotal=orderedChallenges.length;
- return <AppScreen contentStyle={{gap:spacing.md,backgroundColor:'#F9F6FE'}}>
+ return <SafeAreaView edges={['top','bottom','left','right']} style={{flex:1,backgroundColor:'#F9F6FE'}}>
+ <View style={{flex:1,width:'100%',maxWidth:880,alignSelf:'center',paddingHorizontal:16,paddingTop:16}}>
   <View style={{flexDirection:'row',alignItems:'center',gap:10,marginBottom:6}}>
    <Pressable accessibilityRole="button" accessibilityLabel="بازگشت به چالش‌ها"
     onPress={()=>router.replace({pathname:'/stages/[stageId]',params:{stageId}})}
@@ -82,6 +83,37 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
     </View>
    </View>
   </View>
- {!ready?<LoadingState title="بررسی نشست کودک…"/>:!enabled?<ErrorState title="ابتدا پروفایل کودک را انتخاب کنید" onRetry={()=>router.replace('/children')}/>:loading?<LoadingState title="دریافت بازی…"/>:challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:spec&&state?<><AppText variant="title" weight="700">{spec.title??'بازی آموزشی'}</AppText><AppText tone="muted">{data?.prompt??spec.prompt??data?.description??spec.instruction??'به پرسش پاسخ بده.'}</AppText>{renderer}{feedback&&!feedback.isCorrect?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}{feedback?.isCorrect?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText><AppButton title="ادامه بازی" onPress={()=>{void proceed(feedback.nextChallengeId).catch(e=>setError(message(e)))}}/></AppCard>:null}{error?<AppText tone="error">{error}</AppText>:null}{!solved&&<AppButton title="ثبت پاسخ" fullWidth loading={sending} disabled={!canSubmit(spec,state)} onPress={()=>{void submit()}}/>}</>:null}
- </AppScreen>;
+  {spec && state && <View style={{paddingVertical:12,paddingHorizontal:4,gap:5}}>
+    <AppText variant="title" weight="700" style={{textAlign:'right'}}>{spec.title??'بازی آموزشی'}</AppText>
+    {!!(data?.prompt??spec.prompt??data?.description??spec.instruction) && <AppText tone="muted" style={{textAlign:'right'}}>
+      {data?.prompt??spec.prompt??data?.description??spec.instruction}
+    </AppText>}
+   </View>}
+   <ScrollView keyboardShouldPersistTaps="handled" style={{flex:1}}
+     contentContainerStyle={{gap:spacing.md,paddingTop:12,paddingBottom:24}}
+     nestedScrollEnabled>
+     {!ready?<LoadingState title="بررسی نشست کودک…"/>:
+     !enabled?<ErrorState title="ابتدا پروفایل کودک را انتخاب کنید" onRetry={()=>router.replace('/children')}/>:
+     loading?<LoadingState title="دریافت بازی…"/>:
+     challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:
+     spec&&state?<>{renderer}
+      {feedback&&!feedback.isCorrect?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
+      {feedback?.isCorrect?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
+      {error?<AppText tone="error">{error}</AppText>:null}
+     </>:null}
+   </ScrollView>
+   {spec&&state&&enabled&&<View style={{paddingVertical:12,borderTopWidth:1,borderTopColor:'#EDE6F7'}}>
+     {feedback?.isCorrect?
+       <Pressable accessibilityRole="button" onPress={()=>{void proceed(feedback.nextChallengeId).catch(e=>setError(message(e)));}}
+         style={{height:52,borderRadius:15,backgroundColor:'#764EB2',justifyContent:'center',alignItems:'center'}}>
+         <AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:23}}>→</AppText>
+       </Pressable>:
+       <Pressable accessibilityRole="button" disabled={sending||!canSubmit(spec,state)||solved}
+         onPress={()=>{void submit()}}
+         style={{height:52,borderRadius:15,backgroundColor:sending||!canSubmit(spec,state)||solved?'#B6A7CE':'#764EB2',justifyContent:'center',alignItems:'center'}}>
+         <AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:23}}>→</AppText>
+       </Pressable>}
+   </View>}
+ </View>
+ </SafeAreaView>;
 }
