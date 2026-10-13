@@ -35,8 +35,11 @@ export const AddChildSheet=forwardRef<AddChildSheetHandle,Props>(function AddChi
  const months=persianMonths.map((label,i)=>({value:i+1,label}));
  const days=Array.from({length:maxDay},(_,i)=>({value:i+1,label:String(i+1)}));
  return <BottomSheetModal ref={ref} snapPoints={['90%']} enableDynamicSizing={false} enablePanDownToClose={!saving} backgroundStyle={{backgroundColor:colors.surface}} handleIndicatorStyle={{backgroundColor:colors.textMuted}}>
- <BottomSheetScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:spacing.lg,gap:spacing.md,paddingBottom:spacing.xxl}}>
- <AppText variant="title">افزودن کودک</AppText>
+ <View style={{flex:1,minHeight:0}}>
+ <View style={{paddingHorizontal:spacing.lg,paddingTop:spacing.md,paddingBottom:spacing.sm,borderBottomWidth:1,borderBottomColor:colors.border}}>
+  <AppText variant="title" weight="700">افزودن کودک</AppText>
+ </View>
+ <BottomSheetScrollView style={{flex:1}} keyboardShouldPersistTaps="handled" nestedScrollEnabled contentContainerStyle={{padding:spacing.lg,gap:spacing.md,paddingBottom:spacing.lg}}>
  <AppInput label="نام" required value={firstName} onChangeText={setFirstName} maxLength={80}/>
  <AppInput label="نام خانوادگی" value={lastName} onChangeText={setLastName} maxLength={100}/>
  <AppInput label="کد ملی (اختیاری)" value={nationalCode} keyboardType="number-pad" onChangeText={setNationalCode} maxLength={10}/>
@@ -47,13 +50,14 @@ export const AddChildSheet=forwardRef<AddChildSheetHandle,Props>(function AddChi
  <DateWheel label="ماه" options={months} value={month} onChange={v=>{setMonth(v);setDay(d=>Math.min(d,daysInJalaliMonth(year,v)));}} />
  <DateWheel label="روز" options={days} value={validDay} onChange={setDay} />
  </View>
- <AppText weight="700">جنسیت (فقط انتخاب ظاهر آواتار)</AppText>
+ <AppText weight="700">جنسیت</AppText>
  <View style={{flexDirection:'row-reverse',gap:8}}><Choice title="پسر" active={gender==='boy'} onPress={()=>{setGender('boy');setAvatar(0);}}/><Choice title="دختر" active={gender==='girl'} onPress={()=>{setGender('girl');setAvatar(0);}}/></View>
  <AppText weight="700">انتخاب آواتار</AppText>
  <View style={{flexDirection:'row-reverse',gap:12}}>{avatarOptions[gender].map((source,i)=><Pressable key={i} onPress={()=>setAvatar(i)} accessibilityRole="button" accessibilityLabel={`آواتار ${i+1}`} accessibilityState={{selected:avatar===i}} style={{borderColor:avatar===i?colors.primary:colors.border,borderWidth:2,borderRadius:36,padding:3}}><Image source={source} style={{width:48,height:48,borderRadius:24}} /></Pressable>)}</View>
- <AppText tone="muted" variant="caption">آواتار و جنسیت در API فعلی ذخیره نمی‌شوند و انتخابشان پس از دریافت مجدد لیست ممکن است باقی نماند.</AppText>
  {!!(formError||serverError)&&<AppText tone="error" accessibilityRole="alert">{formError||serverError}</AppText>}
- <AppButton title="ذخیره پروفایل" loading={saving} disabled={saving} fullWidth onPress={()=>{void submit();}} />
-
- </BottomSheetScrollView></BottomSheetModal>;
+ </BottomSheetScrollView>
+ <View style={{paddingHorizontal:spacing.lg,paddingTop:spacing.md,paddingBottom:spacing.lg,borderTopWidth:1,borderTopColor:colors.border,backgroundColor:colors.surface}}>
+  <AppButton title="ذخیره پروفایل" loading={saving} disabled={saving} fullWidth onPress={()=>{void submit();}} />
+ </View>
+ </View></BottomSheetModal>;
 });
