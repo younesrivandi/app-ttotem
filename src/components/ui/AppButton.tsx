@@ -4,10 +4,10 @@ import { useAppTheme } from '@/theme/ThemeProvider';
 import { radii, spacing } from '@/theme/tokens';
 import { AppText } from './AppText';
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-type Props = Omit<PressableProps, 'children'> & { title: string; variant?: Variant; size?: 'sm' | 'md' | 'lg'; loading?: boolean; fullWidth?: boolean; leadingIcon?: ReactNode };
-export function AppButton({title,variant='primary',size='md',loading=false,disabled=false,fullWidth=false,leadingIcon,style,...rest}: Props) {
+type Props = Omit<PressableProps, 'children'> & { title: string; variant?: Variant; size?: 'sm' | 'md' | 'lg'; loading?: boolean; fullWidth?: boolean; leadingIcon?: ReactNode; textColor?: string };
+export function AppButton({title,variant='primary',size='md',loading=false,disabled=false,fullWidth=false,leadingIcon,textColor,style,...rest}: Props) {
  const {colors}=useAppTheme(); const filled=variant==='primary'||variant==='danger';
- const foreground=filled?colors.primaryContrast:colors.primary;
+ const foreground=textColor??(filled?colors.primaryContrast:colors.primary);
  const background=variant==='primary'?colors.primary:variant==='danger'?colors.error:variant==='secondary'?colors.surfaceMuted:'transparent';
  const height=size==='sm'?40:size==='lg'?56:48;
  return <Pressable {...rest} accessibilityRole="button" accessibilityLabel={rest.accessibilityLabel??title}
