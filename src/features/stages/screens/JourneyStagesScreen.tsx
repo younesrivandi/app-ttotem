@@ -117,7 +117,7 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
             <AppText style={{ fontSize: 24, lineHeight: 32, textAlign: 'center' }}>🔒</AppText>
           </View>}
           {finished && !locked && <View pointerEvents="none" style={{
-            position: 'absolute', bottom: NODE_SIZE * 0.19,
+            position: 'absolute', bottom: NODE_SIZE * 0.29,
             left: (NODE_SIZE - 30) / 2, width: 30, height: 30,
             alignItems: 'center', justifyContent: 'center',
           }}>
