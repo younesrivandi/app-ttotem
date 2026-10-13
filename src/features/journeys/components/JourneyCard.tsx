@@ -17,14 +17,13 @@ export function JourneyCard({ journey, index, active, onPress, width = 224, heig
   const stars = earnedStars(journey.progressPercent);
   return <Pressable onPress={onPress} accessibilityRole="button"
     accessibilityLabel={`${journey.name ?? `سفر ${index + 1}`}، ${stars} ستاره از ۵${journey.isLocked ? '، قفل' : ''}`}
-    accessibilityState={{ selected: active, disabled: !!journey.isLocked }}
-    disabled={!!journey.isLocked}
+    accessibilityState={{ selected: active, disabled: !!journey.isLocked && active }}
     style={{
-      width, height: active ? height : height * 0.8,
+      width, height,
       borderRadius: 34, borderWidth: active ? 4 : 3,
       borderColor: active ? '#ffda55' : 'rgba(255,255,255,0.9)',
       backgroundColor: '#019fe1', overflow: 'hidden',
-      opacity: journey.isLocked ? 0.65 : active ? 1 : 0.85,
+      opacity: journey.isLocked ? 0.65 : 1,
       shadowColor: '#221d30', shadowOpacity: 0.33, shadowRadius: 8,
       shadowOffset: { width: 0, height: 6 }, elevation: active ? 9 : 3,
     }}>
