@@ -9,7 +9,7 @@ import { AppThemeProvider, useAppTheme } from '@/theme/ThemeProvider';
 function Navigation() {
   const { resolvedMode, colors } = useAppTheme();
   return <>
-    <StatusBar style={resolvedMode === 'dark' ? 'light' : 'dark'} backgroundColor={colors.background} />
+    <StatusBar hidden />
     <Stack screenOptions={{headerShown:false,contentStyle:{backgroundColor:colors.background}}}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="navigation-lab" options={{presentation:'card'}} />
