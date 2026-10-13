@@ -29,7 +29,7 @@ export const AddChildSheet=forwardRef<AddChildSheetHandle,Props>(function AddChi
  if(!result.success){setFormError(result.error.issues[0]?.message??'ورودی نامعتبر است.');return;}
  setFormError('');setRequestError('');
  try {
-  await onSave({firstName:result.data.firstName,lastName:result.data.lastName,birthDate:jalaliToIso(year,month,validDay),nationalCode:result.data.nationalCode||null,gender,avatarId:null,avatarUrl:avatarPaths[gender][avatar]});
+  await onSave({firstName:result.data.firstName,lastName:result.data.lastName,birthDate:jalaliToIso(year,month,validDay),nationalCode:result.data.nationalCode||null,gender,avatarId:null,avatarUrl:avatarPaths[gender][avatar] ?? avatarPaths[gender][0] ?? ''});
  } catch (error:unknown) {
   setRequestError(error instanceof Error ? error.message : 'ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.');
   return;
