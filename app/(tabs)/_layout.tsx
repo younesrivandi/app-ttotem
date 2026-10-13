@@ -1,9 +1,30 @@
-import { Tabs } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Redirect, Tabs } from 'expo-router';
 import { useAppTheme } from '@/theme/ThemeProvider';
+import { bootstrapSession, currentSession, subscribeSession } from '@/services/auth/session';
 
-/** Routes in this group keep their existing public URLs. */
+/** Keep private tab routes hidden until credentials have been loaded. */
 export default function MainTabs() {
   const { colors } = useAppTheme();
+  const [ready, setReady] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const sync = () => {
+      if (!active) return;
+      const session = currentSession();
+      setAuthenticated(Boolean(session.parent?.accessToken || (session.child?.accessToken && session.childId)));
+      setReady(true);
+    };
+    const unsubscribe = subscribeSession(sync);
+    void bootstrapSession().then(sync);
+    return () => { active = false; unsubscribe(); };
+  }, []);
+
+  if (!ready) return null;
+  if (!authenticated) return <Redirect href="/login" />;
+
   return <Tabs screenOptions={{
     headerShown:false,
     tabBarActiveTintColor:colors.primary,
