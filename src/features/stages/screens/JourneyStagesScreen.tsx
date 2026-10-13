@@ -11,6 +11,7 @@ import { bootstrapSession, currentSession, subscribeSession } from '@/services/a
 import { queryKeys } from '@/services/api/queryKeys';
 import { listJourneys } from '@/features/journeys/api/journeysApi';
 import { getJourneyStages } from '../api/stagesApi';
+import { tabArtwork } from '@/components/navigation/tabArtwork';
 import { completed, isStageLocked, stageStars } from '../model/stages';
 
 const message = (e: unknown) => e instanceof Error ? e.message : 'خطای ناشناخته';
@@ -195,6 +196,26 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
               <View style={{ width: `${progress}%`, height: '100%', borderRadius: 10,
                 backgroundColor: '#FFC845' }} />
             </View>
+          </View>
+          <View style={{ position: 'absolute', bottom: 10 + Math.max(insets.bottom, 0),
+            left: 18, right: 18, height: 64, backgroundColor: '#FFFAF4',
+            borderRadius: 32, borderWidth: 2, borderColor: '#FFFFFF',
+            flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
+            shadowColor: '#55412C', shadowOpacity: 0.18, shadowRadius: 11, elevation: 8 }}>
+            {([
+              { key: 'trophy', href: '/leaderboard' },
+              { key: 'home', href: '/journeys' },
+              { key: 'compass', href: '/parent' },
+            ] as const).map(item =>
+              <Pressable key={item.key} accessibilityRole="button"
+                accessibilityLabel={item.key === 'home' ? 'خانه' : item.key === 'trophy' ? 'رتبه‌بندی' : 'بخش والدین'}
+                onPress={() => router.replace(item.href)}
+                style={{ width: 64, height: 60, justifyContent: 'center', alignItems: 'center' }}>
+                <Image source={{ uri: tabArtwork[item.key] }} resizeMode="contain"
+                  style={{ width: 44, height: 44 }} />
+                {item.key === 'home' && <View style={{ position: 'absolute', bottom: 0,
+                  width: 24, height: 3, borderRadius: 2, backgroundColor: '#8141C6' }} />}
+              </Pressable>)}
           </View>
         </>}
     </View>
