@@ -14,12 +14,12 @@ export function DateWheel({ label, options, value, onChange }: Props) {
 
   const selectAt = useCallback((index: number, smooth = true) => {
     const next = Math.max(0, Math.min(options.length - 1, index));
-    list.current?.scrollTo({ top: next * ITEM, behavior: smooth ? 'smooth' : 'instant' });
+    list.current?.scrollTo({ top: next * ITEM, behavior: smooth ? 'smooth' : 'auto' });
     if (options[next] && options[next].value !== value) onChange(options[next].value);
   }, [onChange, options, value]);
 
   useEffect(() => {
-    list.current?.scrollTo({ top: currentIndex * ITEM, behavior: 'instant' });
+    list.current?.scrollTo({ top: currentIndex * ITEM, behavior: 'auto' });
   }, [currentIndex]);
 
   useEffect(() => () => { if (settleTimer.current) clearTimeout(settleTimer.current); }, []);
