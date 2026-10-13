@@ -37,7 +37,7 @@ export default function MainTabs() {
     <Tabs.Screen name="index" options={{href:null}} />
     <Tabs.Screen name="journeys/index" options={{title:'خانه',tabBarIcon:({color,size})=><Ionicons name="home" color={color} size={size+4}/>}} />
     <Tabs.Screen name="children" options={{href:null,tabBarStyle:{display:'none'}}} />
-    <Tabs.Screen name="parent" options={{title:'جوایز',tabBarIcon:({color,size})=><Ionicons name="trophy" color={color} size={size}/>}} />
+    <Tabs.Screen name="parent" options={{title:'والد',tabBarIcon:({color,size})=><Ionicons name="trophy" color={color} size={size}/>}} />
     <Tabs.Screen name="leaderboard" options={{title:'رتبه‌بندی',tabBarIcon:({color,size})=><Ionicons name="compass" color={color} size={size}/>}} />
   </Tabs>;
 }
