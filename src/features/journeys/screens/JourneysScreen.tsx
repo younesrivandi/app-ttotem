@@ -165,7 +165,7 @@ export function JourneysScreen() {
                   snapMode="page"
                   onProgressChange={handleProgress}
                   animation={{ type: 'spring', damping: 20, stiffness: 180 }}
-                  layout={{ type: 'parallax', offset: Math.min(canvasWidth * 0.58, 235), scale: 0.84, adjacentScale: 0.76 }}
+                  layout={{ type: 'parallax', offset: Math.min(canvasWidth * 0.53, 215), scale: 0.84, adjacentScale: 0.68 }}
                   onSnapToItem={index => {
                     activateIndex(index);
                   }}
