@@ -41,6 +41,11 @@ export default function MainTabs() {
 
   if (!ready) return null;
   if (!authenticated) return <Redirect href="/login" />;
+  const session = currentSession();
+  const childSelected = Boolean(session.childId && session.child?.accessToken);
+  // Parents without an active child may only use child management.
+  // The index route itself resolves to the correct destination.
+
 
   return <Tabs screenOptions={{
     headerShown: false,
