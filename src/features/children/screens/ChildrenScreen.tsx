@@ -39,8 +39,8 @@ export function ChildrenScreen() {
    <View style={{paddingHorizontal:spacing.md,paddingTop:spacing.lg,paddingBottom:spacing.sm,gap:spacing.xs}}>
     <View style={{flexDirection:'row-reverse',justifyContent:'space-between',alignItems:'center',gap:spacing.sm}}>
      <AppText variant="title" weight="700" style={{flexShrink:1}}>مدیریت کودکان</AppText>
-     <AppButton title="خروج" size="sm" variant="outline" loading={loggingOut}
-       style={{minHeight:36,borderRadius:999,paddingHorizontal:12,borderColor:colors.error}}
+     <AppButton title="خروج" size="sm" variant="outline" textColor={colors.error} loading={loggingOut}
+       style={{height:36,minWidth:68,borderRadius:999,paddingHorizontal:12,borderColor:colors.error,alignItems:'center',justifyContent:'center'}}
        onPress={()=>{void logout();}} />
     </View>
     <AppText tone="muted">یک پروفایل را انتخاب کن یا کودک جدیدی اضافه کن.</AppText>
@@ -76,6 +76,6 @@ export function ChildrenScreen() {
       onPress={()=>{if(selected)select.mutate(selected);}}/>
    </View>
   </View>
-  <AddChildSheet ref={sheet} saving={create.isPending} serverError={formServerError} onSave={save} onClose={()=>{if(!create.isPending)sheet.current?.dismiss();}}/>
+  <AddChildSheet ref={sheet} saving={create.isPending} serverError={formServerError} onSave={save}/>
  </SafeAreaView>;
 }
