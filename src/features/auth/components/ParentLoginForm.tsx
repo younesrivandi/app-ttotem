@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Image, Keyboard, Platform } from 'react-native';
+import { View, Image, Keyboard, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { z } from 'zod';
 import { AppButton, AppInput, AppText } from '@/components/ui';
 import { AppSheet, type AppSheetHandle } from '@/components/overlays/AppSheet';
 import { spacing } from '@/theme/tokens';
+import { OtpCodeInput } from './OtpCodeInput';
 import { bootstrapSession, currentSession } from '@/services/auth/session';
 import { readPendingJoin } from '@/features/groups/services/pendingJoin';
 import { requestParentOtp, verifyParentOtp } from '../api/parentAuth';
@@ -56,16 +57,23 @@ export function ParentLoginForm() {
        با ورود، شرایط و قوانین را می‌پذیرید.
      </AppText>
    </View>
-   <AppSheet ref={sheet} snapPoints={['65%','90%']} onDismiss={()=>{setOtpError('');}}>
-    <View style={{gap:spacing.md,paddingBottom:spacing.lg}}>
-     <AppText variant="subtitle" weight="700">کد ورود را وارد کنید</AppText>
-     <AppText tone="muted">کد ۶ رقمی ارسال‌شده به {verifiedMobile}</AppText>
-     <AppInput label="کد یک‌بارمصرف" keyboardType="number-pad" textContentType="oneTimeCode" autoComplete={Platform.OS==='web'?'one-time-code':'sms-otp'} value={code} onChangeText={v=>{setCode(normalizeDigits(v).slice(0,6));setOtpError('');}} maxLength={6} error={otpError} placeholder="ــــــ" onSubmitEditing={()=>{void confirm();}} />
-     <AppButton title="تأیید و ورود" fullWidth loading={busy} onPress={()=>{void confirm();}} />
-     <View style={{flexDirection:'row-reverse',gap:spacing.sm,flexWrap:'wrap'}}>
-      <AppButton title="ارسال مجدد کد" variant="outline" disabled={busy} onPress={()=>{void send();}} />
-      <AppButton title="تغییر شماره" variant="ghost" disabled={busy} onPress={()=>sheet.current?.dismiss()} />
-     </View>
+   <AppSheet ref={sheet} snapPoints={['52%', '76%']} onDismiss={()=>{setOtpError('');}}>
+    <View style={{gap:23,paddingTop:10,paddingBottom:spacing.lg}}>
+      <View style={{alignItems:'center',gap:3}}>
+        <AppText variant="subtitle" weight="700" style={{textAlign:'center',color:'#2F2141'}}>کد ورود را وارد کنید</AppText>
+        <AppText variant="caption" style={{textAlign:'center',color:'#84788E'}}>کد ارسال‌شده به {verifiedMobile}</AppText>
+      </View>
+      <OtpCodeInput value={code} onChange={v=>{setCode(v);setOtpError('');}} onSubmit={()=>{void confirm();}} error={otpError}/>
+      <AppButton title="تأیید و ورود" fullWidth loading={busy} onPress={()=>{void confirm();}}
+        style={{borderRadius:999,minHeight:54,backgroundColor:'#7742C2',shadowColor:'#4A218B',shadowOffset:{width:0,height:6},shadowOpacity:0.22,shadowRadius:10,elevation:5}}/>
+      <View style={{flexDirection:'row-reverse',alignItems:'center',justifyContent:'center',gap:24,flexWrap:'wrap'}}>
+        <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{void send();}} style={{paddingVertical:8,paddingHorizontal:6,opacity:busy?0.5:1}}>
+          <AppText style={{textAlign:'center',fontSize:13,color:'#7542B8',fontWeight:'600'}}>ارسال مجدد کد</AppText>
+        </Pressable>
+        <Pressable accessibilityRole="button" disabled={busy} onPress={()=>sheet.current?.dismiss()} style={{paddingVertical:8,paddingHorizontal:6,opacity:busy?0.5:1}}>
+          <AppText style={{textAlign:'center',fontSize:13,color:'#7542B8'}}>تغییر شماره موبایل</AppText>
+        </Pressable>
+      </View>
     </View>
    </AppSheet>
 
