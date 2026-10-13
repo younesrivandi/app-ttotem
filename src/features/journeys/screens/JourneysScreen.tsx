@@ -120,7 +120,7 @@ export function JourneysScreen() {
 
         <Image source={logo} resizeMode="contain" accessible accessibilityLabel="تی تو تم" style={{ alignSelf: 'center', width: Math.min(canvasWidth * 0.53, 230), height: 87, marginTop: 9 }} />
 
-        <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 24 }}>
+        <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 102 }}>
           {journeysQuery.isLoading ? <LoadingState title="دریافت سفرها…" /> :
             journeysQuery.isError ? <ErrorState description={errorMessage(journeysQuery.error)} onRetry={() => { void journeysQuery.refetch(); }} /> :
             journeys.length === 0 ? <EmptyState title="هنوز سفری آماده نشده است" /> :
