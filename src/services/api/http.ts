@@ -105,7 +105,8 @@ function refresh(role: Role, expectedRevision: number): Promise<RefreshResult> {
     } catch { return null; }
   })();
   inFlightRefresh[role] = task;
-  void task.finally(() => { if (inFlightRefresh[role] === task) delete inFlightRefresh[role]; });
+  const cleanup = () => { if (inFlightRefresh[role] === task) delete inFlightRefresh[role]; };
+  void task.then(cleanup, cleanup);
   return task;
 }
 
@@ -137,17 +138,26 @@ export async function httpRequest<T>(path: string, opts: HttpOptions = {}, schem
 
   let response = await send(initialToken);
   if (response.status === 401 && role !== 'none' && revision !== null && initialToken) {
-    assertCurrent(role, revision, initialToken);
-    const refreshed = await waitForRefresh(role, opts.signal);
-    // If a different request already updated the token, reuse it rather than refreshing twice.
-    const changedToken = currentSession()[role]?.accessToken;
-    const next = refreshed?.token ?? (changedToken && changedToken !== initialToken ? changedToken : null);
-    const result = next ? { token: next, revision } : await refresh(role, revision);
-    if (!result) throw new ApiError('امکان تمدید نشست وجود ندارد. دوباره تلاش کنید.', 401, 'refresh_failed');
-    assertCurrent(role, result.revision, result.token);
-    // A failed retry is returned as-is: never start a second refresh loop.
-    response = await send(result.token);
-    assertCurrent(role, result.revision, result.token);
+    // Never replay a response after logout, role switch or child switch.
+    if (currentRevision(role) !== revision)
+      throw new ApiError('نشست کاربر تغییر کرده است.', 401, 'session_changed');
+
+    // Another call may already have completed refresh while this request was in flight.
+    let token = currentSession()[role]?.accessToken;
+    if (!token || token === initialToken) {
+      const pending = await waitForRefresh(role, opts.signal);
+      if (currentRevision(role) !== revision)
+        throw new ApiError('نشست کاربر تغییر کرده است.', 401, 'session_changed');
+      token = pending?.token ?? currentSession()[role]?.accessToken;
+      if (!token || token === initialToken) {
+        const updated = await refresh(role, revision);
+        token = updated?.token;
+      }
+    }
+    if (!token) throw new ApiError('امکان تمدید نشست وجود ندارد. دوباره تلاش کنید.', 401, 'refresh_failed');
+    assertCurrent(role, revision, token);
+    response = await send(token); // At most one replay, including for POST attempts.
+    assertCurrent(role, revision, token);
   }
   if (!response.ok) throw await failure(response);
   const payload = await parseResponse(response);
