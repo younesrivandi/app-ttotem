@@ -22,7 +22,7 @@ export function ParentDashboardScreen(){
  const children=useQuery({queryKey:queryKeys.children,queryFn:listChildren,enabled:authorized});
  if(!ready)return <AppScreen><LoadingState title="بررسی نشست والد…"/></AppScreen>;
  if(!authorized)return <AppScreen contentStyle={{gap:spacing.md,paddingBottom:64+10+Math.max(insets.bottom,12)+spacing.lg}}><ErrorState title="ورود والد لازم است" description="برای دیدن گزارش پیشرفت کودکان ابتدا وارد حساب والد شوید."/><AppButton title="ورود والد" onPress={()=>router.replace('/login')}/></AppScreen>;
- return <AppScreen contentStyle={{gap:spacing.md}}>
+ return <AppScreen contentStyle={{gap:spacing.md,paddingBottom:140+Math.max(insets.bottom,12)}}>
   <View style={{flexDirection:'row-reverse',justifyContent:'space-between',alignItems:'center',gap:spacing.sm,flexWrap:'wrap'}}>
    <View style={{gap:spacing.xs}}><AppText variant="title" weight="700">بخش والدین</AppText><AppText tone="muted">گزارش رشد و یادگیری</AppText></View>
    <View style={{flexDirection:'row-reverse',gap:spacing.sm,flexWrap:'wrap'}}><AppButton variant="outline" title="انتخاب کودک" onPress={()=>router.push('/children')}/><AppButton variant="danger" title="خروج از حساب" loading={loggingOut} onPress={()=>{void logout();}}/></View>
