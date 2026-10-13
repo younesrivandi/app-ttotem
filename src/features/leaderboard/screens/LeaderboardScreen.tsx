@@ -20,7 +20,6 @@ export function LeaderboardScreen(){
  const query=useQuery({queryKey:queryKeys.leaderboard(childId),queryFn:fetchLeaderboard,enabled:canRead});
  return <AppScreen contentStyle={{gap:spacing.md,paddingBottom:64+10+Math.max(insets.bottom,12)+spacing.lg}}>
   <View style={{alignItems:'center',gap:8,paddingTop:spacing.sm,paddingBottom:spacing.sm}}>
-   <AppText style={{fontSize:36}}>🏆</AppText>
    <AppText variant="title" weight="700" style={{textAlign:'center'}}>برترین‌های تی تو تم</AppText>
    <AppText tone="muted" style={{textAlign:'center'}}>با هر ماجراجویی، به رتبه‌های بالاتر نزدیک شو!</AppText>
   </View>
