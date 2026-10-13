@@ -34,6 +34,6 @@ export function StageChallengesScreen({stageId}:{stageId:string}){
  <AppCard><AppText weight="700">{complete?'🎁 آفرین! مرحله کامل شد':'🌟 جایزه در انتظارت است'}</AppText><AppText tone="muted">{complete?'نتیجه و جایزه‌ات را ببین':`${Math.max(0,totalCount-completeCount)} چالش دیگر تا تکمیل مرحله`}</AppText>{complete&&<AppButton title="دیدن نتیجه" onPress={()=>setResultOpen(true)}/>}</AppCard>
 
  </>}
- {authorized&&complete&&<StageResultSheet stageId={stageId} childId={childId} open={resultOpen} onClose={()=>setResultOpen(false)} onContinue={()=>{setResultOpen(false);router.replace('/coming-soon');}} onReplay={()=>{setResultOpen(false);router.replace({pathname:'/stages/[stageId]',params:{stageId}});}}/>}
+ {authorized&&complete&&<StageResultSheet stageId={stageId} childId={childId} open={resultOpen} onClose={()=>setResultOpen(false)} onContinue={()=>{setResultOpen(false);router.replace('/journeys');}} onReplay={()=>{setResultOpen(false);router.replace({pathname:'/stages/[stageId]',params:{stageId}});}}/>}
  </AppScreen>;
 }
