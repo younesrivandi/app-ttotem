@@ -8,17 +8,14 @@ import { bootstrapSession, currentSession, subscribeSession } from '@/services/a
 type TabArtworkName = keyof typeof tabArtwork;
 function ArtworkIcon({ name, focused }: { name: TabArtworkName; focused: boolean }) {
   return <View style={{
-    width: 66, height: 58, alignItems: 'center', justifyContent: 'center',
-    borderRadius: 24,
-    backgroundColor: focused ? 'rgba(173,113,233,0.14)' : 'transparent',
-    shadowColor: '#8141C6', shadowOffset: { width: 0, height: 0 },
-    shadowRadius: focused ? 11 : 0, shadowOpacity: focused ? 0.7 : 0,
-    elevation: focused ? 5 : 0,
-    transform: [{ scale: focused ? 1.12 : 0.96 }],
+    width: 64, height: 64, alignItems: 'center', justifyContent: 'center',
   }}>
     <Image source={{ uri: tabArtwork[name] }} resizeMode="contain"
-      style={{ width: 57, height: 57, opacity: focused ? 1 : 0.82 }} />
-    {focused && <View style={{ position: 'absolute', bottom: -2, width: 18, height: 4, borderRadius: 3, backgroundColor: '#8141C6' }} />}
+      style={{ width: 48, height: 48 }} />
+    {focused && <View style={{
+      position: 'absolute', bottom: 1, width: 24, height: 3,
+      borderRadius: 2, backgroundColor: '#8141C6',
+    }} />}
   </View>;
 }
 
@@ -54,7 +51,7 @@ export default function MainTabs() {
       position: 'absolute', backgroundColor: '#fffaf4',
       borderTopColor: '#fff', borderTopWidth: 2,
       borderRadius: 36, height: 78, marginHorizontal: 18,
-      marginBottom: 10, paddingTop: 4, paddingBottom: 4,
+      marginBottom: 10, paddingTop: 0, paddingBottom: 0,
       shadowColor: '#55412c', shadowOpacity: 0.18,
       shadowRadius: 11, elevation: 8,
     },
