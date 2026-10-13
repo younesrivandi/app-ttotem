@@ -1,5 +1,6 @@
 import { useEffect,useState } from 'react';
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppScreen } from '@/components/layout/AppScreen';
@@ -14,13 +15,13 @@ import { listChildren } from '@/features/children/api/childrenApi';
 import { ChildStatisticsCard } from '../components/ChildStatisticsCard';
 function errorMessage(error:unknown){return error instanceof Error?error.message:'خطایی در دریافت اطلاعات رخ داد.';}
 export function ParentDashboardScreen(){
- const router=useRouter();const queryClient=useQueryClient();const [ready,setReady]=useState(false);const [loggingOut,setLoggingOut]=useState(false);
+ const router=useRouter();const insets=useSafeAreaInsets();const queryClient=useQueryClient();const [ready,setReady]=useState(false);const [loggingOut,setLoggingOut]=useState(false);
  useEffect(()=>{let active=true;void bootstrapSession().then(()=>{if(active)setReady(true);}).catch(()=>{if(active)setReady(true);});return()=>{active=false;};},[]);
  const logout=async()=>{if(loggingOut)return;setLoggingOut(true);try{await clearRoleSession('parent');queryClient.clear();router.replace('/login');}finally{setLoggingOut(false);}};
  const authorized=ready&&!!currentSession().parent?.accessToken;
  const children=useQuery({queryKey:queryKeys.children,queryFn:listChildren,enabled:authorized});
  if(!ready)return <AppScreen><LoadingState title="بررسی نشست والد…"/></AppScreen>;
- if(!authorized)return <AppScreen contentStyle={{gap:spacing.md}}><ErrorState title="ورود والد لازم است" description="برای دیدن گزارش پیشرفت کودکان ابتدا وارد حساب والد شوید."/><AppButton title="ورود والد" onPress={()=>router.replace('/login')}/></AppScreen>;
+ if(!authorized)return <AppScreen contentStyle={{gap:spacing.md,paddingBottom:64+10+Math.max(insets.bottom,12)+spacing.lg}}><ErrorState title="ورود والد لازم است" description="برای دیدن گزارش پیشرفت کودکان ابتدا وارد حساب والد شوید."/><AppButton title="ورود والد" onPress={()=>router.replace('/login')}/></AppScreen>;
  return <AppScreen contentStyle={{gap:spacing.md}}>
   <View style={{flexDirection:'row-reverse',justifyContent:'space-between',alignItems:'center',gap:spacing.sm,flexWrap:'wrap'}}>
    <View style={{gap:spacing.xs}}><AppText variant="title" weight="700">بخش والدین</AppText><AppText tone="muted">گزارش رشد و یادگیری</AppText></View>
