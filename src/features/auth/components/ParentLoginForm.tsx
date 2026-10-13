@@ -41,13 +41,13 @@ export function ParentLoginForm() {
    </View>
    <View style={{gap:24}}>
      <View style={{position:'relative',justifyContent:'center'}}>
-       <AppInput label="شماره موبایل" keyboardType="phone-pad" textContentType="telephoneNumber"
+       <AppInput label="شماره موبایل" hideLabel keyboardType="phone-pad" textContentType="telephoneNumber"
          value={mobile} onChangeText={v=>{setMobile(v);setError('');}}
          placeholder="شماره موبایل خود را وارد کنید" maxLength={18} error={error}
          onSubmitEditing={()=>{void send();}}
          style={{backgroundColor:'#FFFFFF',borderWidth:0,borderRadius:999,minHeight:54,paddingRight:48,paddingLeft:20,color:'#334155',textAlign:'right',shadowColor:'#263E75',shadowOffset:{width:0,height:6},shadowOpacity:0.12,shadowRadius:14,elevation:4}}/>
        <View pointerEvents="none" style={{position:'absolute',right:17,top:14}}>
-         <AppText style={{fontSize:19,lineHeight:25,color:'#7B43C3'}}>♙</AppText>
+         <AppText style={{fontSize:19,lineHeight:25,color:'#7B43C3'}}>📱</AppText>
        </View>
      </View>
      <AppButton title="ورود" fullWidth loading={busy} onPress={()=>{void send();}}
