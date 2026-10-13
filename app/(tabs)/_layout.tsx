@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Image, View } from 'react-native';
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Tabs, usePathname } from 'expo-router';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { tabArtwork } from '@/components/navigation/tabArtwork';
 import { bootstrapSession, currentSession, subscribeSession } from '@/services/auth/session';
@@ -23,6 +23,7 @@ function ArtworkIcon({ name, focused }: { name: TabArtworkName; focused: boolean
 /** Keep private tab routes hidden until credentials have been loaded. */
 export default function MainTabs() {
   const { colors } = useAppTheme();
+  const pathname = usePathname();
   const [ready, setReady] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
 
@@ -43,9 +44,7 @@ export default function MainTabs() {
   if (!authenticated) return <Redirect href="/login" />;
   const session = currentSession();
   const childSelected = Boolean(session.childId && session.child?.accessToken);
-  // Parents without an active child may only use child management.
-  // The index route itself resolves to the correct destination.
-
+  if (!childSelected && pathname !== '/' && pathname !== '/children') return <Redirect href="/children" />;
 
   return <Tabs screenOptions={{
     headerShown: false,
