@@ -104,37 +104,27 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
         onPress={() => router.push({ pathname: '/stages/[stageId]', params: { stageId: stage.stageId } })}
         style={{
           position: 'absolute', left: nodeX(index), top: nodeY(index),
-          width: NODE_SIZE, height: 150, alignItems: 'center', opacity: locked ? 0.66 : 1,
+          width: NODE_SIZE, height: 150, alignItems: 'center', opacity: locked ? 0.82 : 1,
         }}>
-        <View style={{ width: NODE_SIZE, height: NODE_SIZE, alignItems: 'center', justifyContent: 'center',
-          borderRadius: NODE_SIZE / 2, backgroundColor: active ? 'rgba(255,231,147,0.65)' : 'rgba(255,255,255,0.18)',
-          borderWidth: active ? 3 : 2, borderColor: active ? '#FFF3A2' : finished ? '#A9EFCC' : 'rgba(255,255,255,0.6)',
-          shadowColor: active ? '#FFBE3F' : '#38285A', shadowOpacity: active ? 0.7 : 0.27,
-          shadowRadius: active ? 17 : 8, elevation: active ? 11 : 5 }}>
+        <View style={{ width: NODE_SIZE, height: NODE_SIZE, alignItems: 'center', justifyContent: 'center' }}>
           <Image source={stageArtwork} resizeMode="contain"
-            style={{ width: NODE_SIZE - 7, height: NODE_SIZE - 7, opacity: locked ? 0.78 : 1 }} />
-          <View style={{
-            position: 'absolute', right: -7, bottom: 4, minWidth: 33, height: 33,
-            paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center',
-            borderRadius: 17, borderWidth: 2, borderColor: '#FFFFFF',
-            backgroundColor: locked ? '#9699A7' : finished ? '#50B980' : '#7E47D0',
+            style={{ width: NODE_SIZE, height: NODE_SIZE, opacity: locked ? 0.82 : 1 }} />
+          {(locked || finished) && <View style={{
+            position: 'absolute', top: 8, alignItems: 'center', justifyContent: 'center',
+            width: 38, height: 38, borderRadius: 19,
+            backgroundColor: 'rgba(255,255,255,0.94)',
+            shadowColor: '#302642', shadowOpacity: 0.22, shadowRadius: 4, elevation: 3,
           }}>
-            <AppText weight="700" style={{ color: '#FFFFFF', fontSize: locked ? 16 : 15, textAlign: 'center' }}>
-              {locked ? '🔒' : finished ? '✓' : index + 1}
+            <AppText weight="700" style={{ fontSize: locked ? 25 : 31,
+              lineHeight: 35, color: '#352C65', textAlign: 'center' }}>
+              {locked ? '🔒' : '✓'}
             </AppText>
-          </View>
-          {active && <View style={{
-            position: 'absolute', top: -16, paddingHorizontal: 12, paddingVertical: 3,
-            backgroundColor: '#FFD554', borderRadius: 999, borderWidth: 2, borderColor: '#FFF9D4',
-          }}>
-            <AppText weight="700" style={{ color: '#633D11', fontSize: 11, textAlign: 'center' }}>بازی کن!</AppText>
           </View>}
         </View>
         <AppText numberOfLines={1} weight="700"
           style={{ color: '#FFFFFF', textShadowColor: '#3D2E25', textShadowRadius: 4,
             fontSize: 12, textAlign: 'center', width: 148, marginTop: 5 }}>{titleText}</AppText>
-        <View style={{ flexDirection: 'row', gap: 1, marginTop: 3, paddingHorizontal: 8,
-          backgroundColor: 'rgba(45,35,70,0.45)', borderRadius: 99 }}>
+        <View style={{ flexDirection: 'row', gap: 1, marginTop: 3 }}>
           {Array.from({ length: 5 }, (_, star) =>
             <AppText key={star} style={{ color: star < stageStars(stage) ? '#FFC845' : '#E5DFD5',
               fontSize: 12, textShadowColor: '#4D3A34', textShadowRadius: 2 }}>★</AppText>)}
