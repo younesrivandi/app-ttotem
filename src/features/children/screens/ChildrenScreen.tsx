@@ -31,7 +31,7 @@ export function ChildrenScreen() {
  setSelected(child.childProfileId);setFormServerError('');sheet.current?.dismiss();
  void queryClient.invalidateQueries({queryKey:queryKeys.children}).catch(()=>{});
  },onError:error=>setFormServerError(message(error))});
- const select=useMutation({mutationFn:chooseChild,onSuccess:()=>router.replace('/coming-soon')});
+ const select=useMutation({mutationFn:chooseChild,onSuccess:async()=>{await queryClient.invalidateQueries({queryKey:['journeys']});router.replace('/journeys');}});
  const save=async(payload:CreateChildPayload)=>{setFormServerError('');await create.mutateAsync(payload);};
  if(!authReady)return <AppScreen><LoadingState title="بررسی نشست والد…"/></AppScreen>;
  if(!authorized)return <AppScreen><ErrorState title="ورود والد لازم است" description="برای مدیریت پروفایل کودکان ابتدا وارد شوید."/><AppButton title="ورود والد" onPress={()=>router.replace('/login')}/></AppScreen>;
