@@ -5,7 +5,6 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {AppText} from '@/components/ui/AppText';
-import {AppButton} from '@/components/ui/AppButton';
 import {AppCard} from '@/components/ui/AppCard';
 import {LoadingState,ErrorState} from '@/components/ui/AsyncState';
 import {api} from '@/services/api/endpoints';
@@ -106,7 +105,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      {feedback?.isCorrect?
        <Pressable accessibilityRole="button" onPress={()=>{void proceed(feedback.nextChallengeId).catch(e=>setError(message(e)));}}
          style={{height:52,borderRadius:15,backgroundColor:'#764EB2',justifyContent:'center',alignItems:'center'}}>
-         <AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:23}}>→</AppText>
+         <AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:23}}>←</AppText>
        </Pressable>:
        <Pressable accessibilityRole="button" disabled={sending||!canSubmit(spec,state)||solved}
          onPress={()=>{void submit()}}
