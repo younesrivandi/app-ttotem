@@ -96,7 +96,6 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
     {stages.map((stage, index) => {
       const locked = isStageLocked(stage, index, stages);
       const finished = completed(stage);
-      const active = !locked && !finished;
       const titleText = stage.title ?? `مرحله ${index + 1}`;
       return <Pressable key={stage.stageId} disabled={locked}
         accessibilityRole="button" accessibilityLabel={`${titleText}، ${locked ? 'قفل' : finished ? 'انجام‌شده' : 'شروع مرحله'}`}
