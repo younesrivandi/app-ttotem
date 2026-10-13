@@ -36,7 +36,7 @@ export const AddChildSheet=forwardRef<AddChildSheetHandle,Props>(function AddChi
  const days=Array.from({length:maxDay},(_,i)=>({value:i+1,label:String(i+1)}));
  return <BottomSheetModal ref={ref} snapPoints={['90%']} enableDynamicSizing={false} enablePanDownToClose={!saving} backgroundStyle={{backgroundColor:colors.surface}} handleIndicatorStyle={{backgroundColor:colors.textMuted}}>
  <View style={{flex:1,minHeight:0}}>
- <View style={{paddingHorizontal:spacing.lg,paddingTop:spacing.md,paddingBottom:spacing.sm,borderBottomWidth:1,borderBottomColor:colors.border}}>
+ <View style={{paddingHorizontal:spacing.lg,paddingTop:spacing.md,paddingBottom:spacing.sm}}>
   <AppText variant="title" weight="700">افزودن کودک</AppText>
  </View>
  <BottomSheetScrollView style={{flex:1}} keyboardShouldPersistTaps="handled" nestedScrollEnabled contentContainerStyle={{padding:spacing.lg,gap:spacing.md,paddingBottom:spacing.lg}}>
@@ -56,7 +56,7 @@ export const AddChildSheet=forwardRef<AddChildSheetHandle,Props>(function AddChi
  <View style={{flexDirection:'row-reverse',gap:12}}>{avatarOptions[gender].map((source,i)=><Pressable key={i} onPress={()=>setAvatar(i)} accessibilityRole="button" accessibilityLabel={`آواتار ${i+1}`} accessibilityState={{selected:avatar===i}} style={{borderColor:avatar===i?colors.primary:colors.border,borderWidth:2,borderRadius:36,padding:3}}><Image source={source} style={{width:48,height:48,borderRadius:24}} /></Pressable>)}</View>
  {!!(formError||serverError)&&<AppText tone="error" accessibilityRole="alert">{formError||serverError}</AppText>}
  </BottomSheetScrollView>
- <View style={{paddingHorizontal:spacing.lg,paddingTop:spacing.md,paddingBottom:spacing.lg,borderTopWidth:1,borderTopColor:colors.border,backgroundColor:colors.surface}}>
+ <View style={{paddingHorizontal:spacing.lg,paddingTop:spacing.md,paddingBottom:spacing.lg,backgroundColor:colors.surface}}>
   <AppButton title="ذخیره پروفایل" loading={saving} disabled={saving} fullWidth onPress={()=>{void submit();}} />
  </View>
  </View></BottomSheetModal>;
