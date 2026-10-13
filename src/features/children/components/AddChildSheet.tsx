@@ -21,13 +21,19 @@ export const AddChildSheet=forwardRef<AddChildSheetHandle,Props>(function AddChi
  const [gender,setGender]=useState<Gender>('boy');const [avatar,setAvatar]=useState(0);
  const [year,setYear]=useState(1400);const [month,setMonth]=useState(1);const [day,setDay]=useState(1);
  const [formError,setFormError]=useState('');
+ const [requestError,setRequestError]=useState('');
  const maxDay=useMemo(()=>daysInJalaliMonth(year,month),[year,month]);
  const validDay=Math.min(day,maxDay);
  const submit=async()=>{
  const result=validateChildForm(firstName,lastName,nationalCode);
  if(!result.success){setFormError(result.error.issues[0]?.message??'ورودی نامعتبر است.');return;}
- setFormError('');
- await onSave({firstName:result.data.firstName,lastName:result.data.lastName,birthDate:jalaliToIso(year,month,validDay),nationalCode:result.data.nationalCode||null,gender,avatarId:null,avatarUrl:avatarPaths[gender][avatar]});
+ setFormError('');setRequestError('');
+ try {
+  await onSave({firstName:result.data.firstName,lastName:result.data.lastName,birthDate:jalaliToIso(year,month,validDay),nationalCode:result.data.nationalCode||null,gender,avatarId:null,avatarUrl:avatarPaths[gender][avatar]});
+ } catch (error:unknown) {
+  setRequestError(error instanceof Error ? error.message : 'ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.');
+  return;
+ }
  // Form only resets on successful mutation; errors remain visible for correction.
  setFirstName('');setLastName('');setNationalCode('');setYear(1400);setMonth(1);setDay(1);setGender('boy');setAvatar(0);
  };
@@ -54,7 +60,7 @@ export const AddChildSheet=forwardRef<AddChildSheetHandle,Props>(function AddChi
  <View style={{flexDirection:'row-reverse',gap:8}}><Choice title="پسر" active={gender==='boy'} onPress={()=>{setGender('boy');setAvatar(0);}}/><Choice title="دختر" active={gender==='girl'} onPress={()=>{setGender('girl');setAvatar(0);}}/></View>
  <AppText weight="700">انتخاب آواتار</AppText>
  <View style={{flexDirection:'row-reverse',gap:12}}>{avatarOptions[gender].map((source,i)=><Pressable key={i} onPress={()=>setAvatar(i)} accessibilityRole="button" accessibilityLabel={`آواتار ${i+1}`} accessibilityState={{selected:avatar===i}} style={{borderColor:avatar===i?colors.primary:colors.border,borderWidth:2,borderRadius:36,padding:3}}><Image source={source} style={{width:48,height:48,borderRadius:24}} /></Pressable>)}</View>
- {!!(formError||serverError)&&<AppText tone="error" accessibilityRole="alert">{formError||serverError}</AppText>}
+ {!!(formError||requestError||serverError)&&<View style={{backgroundColor:colors.surfaceMuted,padding:spacing.sm,borderRadius:12}}><AppText tone="error" accessibilityRole="alert">{formError||requestError||serverError}</AppText><AppText variant="caption" tone="muted">اطلاعات واردشده حفظ شده است. پیش از ارسال مجدد، فهرست کودکان را بررسی کنید؛ ممکن است درخواست قبلی ثبت شده باشد.</AppText></View>}
  </BottomSheetScrollView>
  <View style={{paddingHorizontal:spacing.lg,paddingTop:spacing.md,paddingBottom:spacing.lg,backgroundColor:colors.surface}}>
   <AppButton title="ذخیره پروفایل" loading={saving} disabled={saving} fullWidth onPress={()=>{void submit();}} />
