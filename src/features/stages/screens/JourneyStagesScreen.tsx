@@ -179,27 +179,48 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
           </View>
           <View style={{
             position: 'absolute', left: 18, right: 18, bottom: 102 + Math.max(insets.bottom, 0),
-            minHeight: 88, backgroundColor: 'rgba(255,248,239,0.96)',
-            borderColor: '#FFFFFF', borderWidth: 1, borderRadius: 26,
-            paddingHorizontal: 14, paddingVertical: 12,
-            shadowColor: '#5F493B', shadowOpacity: 0.2, shadowRadius: 15, elevation: 7,
+            minHeight: 82, backgroundColor: '#FFF8F3',
+            borderWidth: 2, borderColor: '#FFFFFF', borderRadius: 23,
+            paddingHorizontal: 12, paddingVertical: 10,
+            shadowColor: '#4E245E', shadowOpacity: 0.24, shadowRadius: 14, elevation: 8,
           }}>
-            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 10 }}>
-              <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: '#E9FFF7',
-                alignItems: 'center', justifyContent: 'center' }}>
-                <Image source={stageArtwork} resizeMode="contain" style={{ width: 52, height: 52 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+              <View style={{
+                width: 55, height: 55, borderRadius: 18, backgroundColor: '#E5FAF1',
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <AppText style={{ fontSize: 36, lineHeight: 46, textAlign: 'center' }}>🎁</AppText>
               </View>
               <View style={{ flex: 1, gap: 3 }}>
-                <AppText weight="700" style={{ color: '#352D49', fontSize: 13 }}>⭐ {earned} از {total} ستاره</AppText>
-                <AppText style={{ color: '#85808C', fontSize: 10 }}>
-                  {done} مرحله کامل‌شده؛ تا جایزهٔ تکمیل دنیا
-                </AppText>
+                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 7 }}>
+                  <AppText style={{ fontSize: 29, color: '#FFAF14', lineHeight: 34 }}>☆</AppText>
+                  <View style={{ flex: 1 }}>
+                    <AppText weight="700" style={{
+                      fontSize: 14, color: '#332A48', textAlign: 'right',
+                    }}>{earned} از {total} ستاره</AppText>
+                    <AppText style={{
+                      fontSize: 9, color: '#A49BA9', textAlign: 'right',
+                    }}>{done} مرحله کامل‌شده تا جایزهٔ تکمیل دنیا</AppText>
+                  </View>
+                </View>
+                <View style={{
+                  marginTop: 4, height: 10, borderRadius: 999,
+                  backgroundColor: '#DDD8D8', overflow: 'visible',
+                  flexDirection: 'row-reverse', alignItems: 'center',
+                }}>
+                  <View style={{
+                    height: 10, width: `${progress}%`, borderRadius: 999,
+                    backgroundColor: '#FFAC26',
+                  }} />
+                  {[25, 50, 75].map(step =>
+                    <View key={step} style={{
+                      position: 'absolute', right: `${step}%`,
+                      marginRight: -6, width: 12, height: 12,
+                      borderRadius: 6, borderWidth: 2, borderColor: '#FFFFFF',
+                      backgroundColor: progress >= step ? '#FFD47C' : '#DED8DD',
+                    }} />)}
+                </View>
               </View>
-            </View>
-            <View style={{ height: 9, borderRadius: 10, backgroundColor: '#DED8D5',
-              overflow: 'hidden', marginTop: 10, marginHorizontal: 4 }}>
-              <View style={{ width: `${progress}%`, height: '100%', borderRadius: 10,
-                backgroundColor: '#FFC845' }} />
             </View>
           </View>
           <View style={{ position: 'absolute', bottom: 10 + Math.max(insets.bottom, 0),
