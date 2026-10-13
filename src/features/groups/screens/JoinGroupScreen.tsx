@@ -35,7 +35,7 @@ export function JoinGroupScreen(){
   await joinChildToGroup(slug,childId);
   await clearPendingJoin();
   await chooseChild(childId);
- },onSuccess:async()=>{await client.invalidateQueries();router.replace('/coming-soon');},onError:e=>setJoinError(msg(e))});
+ },onSuccess:async()=>{await client.invalidateQueries();router.replace('/journeys');},onError:e=>setJoinError(msg(e))});
  return <AppScreen contentStyle={{gap:spacing.md}}>
   <AppText variant="title" weight="700">دعوت به گروه</AppText>
   {!valid?<ErrorState title="لینک عضویت نامعتبر است" description="شناسه دعوت در لینک صحیح نیست."/>:
