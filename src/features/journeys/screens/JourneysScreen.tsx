@@ -75,6 +75,7 @@ export function JourneysScreen() {
     const next = previousIndex >= 0 ? previousIndex : latestIndex >= 0 ? latestIndex : 0;
     setSelected(next);
     selectedId.current = journeys[next]?.journeyId ?? null;
+    carouselRef.current?.scrollTo({ index: next, animated: false });
   }, [journeys]);
 
   const selectIndex = (index: number) => {
