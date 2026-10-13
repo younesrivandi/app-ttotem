@@ -1,18 +1,13 @@
-// Interim web session continuity: sessionStorage survives a page refresh in the
-// same tab. Refresh tokens are NEVER persisted in JavaScript-readable storage.
-// This is not equivalent to a secure HttpOnly cookie session and does not
-// guarantee login after the access token expires. Replace with a BFF/cookie
-// session before production web release.
+// Temporary same-tab web persistence until the backend supports HttpOnly refresh cookies.
+// sessionStorage is JavaScript-readable and must not be considered a production-grade
+// refresh-token store. Never use localStorage for these tokens.
 const KEY = 'ttotem.web.session.v1';
 let temporary: string | null = null;
 
-type StoredSession = {
-  parent?: { accessToken: string };
-  child?: { accessToken: string };
-  childId?: string;
-};
+type StoredPair = { accessToken: string; refreshToken?: string };
+type StoredSession = { parent?: StoredPair; child?: StoredPair; childId?: string };
 
-function accessOnly(value: string): string | null {
+function sanitize(value: string): string | null {
   try {
     const data: unknown = JSON.parse(value);
     if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
@@ -21,36 +16,36 @@ function accessOnly(value: string): string | null {
     for (const role of ['parent', 'child'] as const) {
       const pair = session[role];
       if (pair && typeof pair === 'object' && !Array.isArray(pair)) {
-        const token = (pair as Record<string, unknown>).accessToken;
-        if (typeof token === 'string' && token.length > 0) {
-          result[role] = { accessToken: token };
+        const token = pair as Record<string, unknown>;
+        if (typeof token.accessToken === 'string' && token.accessToken.length > 0) {
+          result[role] = {
+            accessToken: token.accessToken,
+            ...(typeof token.refreshToken === 'string' && token.refreshToken.length > 0
+              ? { refreshToken: token.refreshToken } : {}),
+          };
         }
       }
     }
     if (result.child && typeof session.childId === 'string') result.childId = session.childId;
     return result.parent || result.child ? JSON.stringify(result) : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 export async function loadCredentials(): Promise<string | null> {
   if (temporary !== null) return temporary;
   try {
-    const stored = window.sessionStorage.getItem(KEY);
-    return stored ? accessOnly(stored) : null;
-  } catch {
-    return null;
-  }
+    const value = window.sessionStorage.getItem(KEY);
+    return value ? sanitize(value) : null;
+  } catch { return null; }
 }
 
 export async function saveCredentials(value: string | null): Promise<void> {
-  temporary = value;
+  const safe = value ? sanitize(value) : null;
+  temporary = safe;
   try {
-    const safe = value ? accessOnly(value) : null;
     if (safe) window.sessionStorage.setItem(KEY, safe);
     else window.sessionStorage.removeItem(KEY);
   } catch {
-    // Private browsing / disabled storage: keep current-tab memory session.
+    // Session remains available in this tab's memory when storage is blocked.
   }
 }
