@@ -1,7 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const assert = require('node:assert/strict');
-const root = path.resolve(__dirname, '..');
+const root = process.cwd();
 const pkg = require('../package.json');
 const expo = require('../app.json').expo;
 const errors = [];
