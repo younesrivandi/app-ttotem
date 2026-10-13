@@ -9,7 +9,7 @@ import { AppCard } from '@/components/ui/AppCard';
 import { EmptyState,ErrorState,LoadingState } from '@/components/ui/AsyncState';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
-import { currentSession,bootstrapSession } from '@/services/auth/session';
+import { currentSession,bootstrapSession,clearRoleSession } from '@/services/auth/session';
 import { queryKeys } from '@/services/api/queryKeys';
 import { listChildren,createChild,chooseChild } from '../api/childrenApi';
 import { ChildAvatar } from '../components/ChildAvatar';
@@ -20,8 +20,9 @@ export function ChildrenScreen() {
  const router=useRouter(),queryClient=useQueryClient();const {colors}=useAppTheme();
  const sheet=useRef<AddChildSheetHandle>(null);
  const [selected,setSelected]=useState('');const [authReady,setAuthReady]=useState(false);
- const [formServerError,setFormServerError]=useState('');
+ const [formServerError,setFormServerError]=useState('');const [loggingOut,setLoggingOut]=useState(false);
  useEffect(()=>{let active=true;void bootstrapSession().then(()=>{if(active)setAuthReady(true);});return()=>{active=false;};},[]);
+ const logout=async()=>{if(loggingOut)return;setLoggingOut(true);try{await clearRoleSession('parent');queryClient.clear();router.replace('/login');}finally{setLoggingOut(false);}};
  const authorized=authReady && !!currentSession().parent?.accessToken;
  const query=useQuery({queryKey:queryKeys.children,queryFn:listChildren,enabled:authorized});
  useEffect(()=>{const firstChild=query.data?.[0];if(firstChild && !query.data?.some(c=>c.childProfileId===selected))setSelected(firstChild.childProfileId);},[query.data,selected]);
@@ -33,7 +34,7 @@ export function ChildrenScreen() {
  if(!authReady)return <AppScreen><LoadingState title="بررسی نشست والد…"/></AppScreen>;
  if(!authorized)return <AppScreen><ErrorState title="ورود والد لازم است" description="برای مدیریت پروفایل کودکان ابتدا وارد شوید."/><AppButton title="ورود والد" onPress={()=>router.replace('/login')}/></AppScreen>;
  return <AppScreen contentStyle={{gap:spacing.md}}>
- <AppText variant="title" weight="700">مدیریت کودکان</AppText>
+ <View style={{flexDirection:'row-reverse',justifyContent:'space-between',alignItems:'center',gap:spacing.sm,flexWrap:'wrap'}}><AppText variant="title" weight="700">مدیریت کودکان</AppText><AppButton title="خروج از حساب" variant="danger" loading={loggingOut} onPress={()=>{void logout();}} /></View>
  <AppText tone="muted">یک پروفایل را انتخاب کن یا کودک جدیدی اضافه کن.</AppText>
  {query.isLoading?<LoadingState title="دریافت فهرست کودکان…"/>:query.isError?<ErrorState description={message(query.error)} onRetry={()=>{void query.refetch();}}/>:
  query.data?.length===0?<EmptyState title="هنوز پروفایلی اضافه نشده" description="اولین کودک را اضافه کنید."/>:
