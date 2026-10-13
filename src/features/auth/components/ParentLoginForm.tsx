@@ -18,7 +18,7 @@ export function ParentLoginForm() {
  const [verifiedMobile,setVerifiedMobile]=useState('');
  const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [otpError,setOtpError]=useState('');
  
- useEffect(()=>{let active=true;void bootstrapSession().then(()=>{if(active && currentSession().parent?.accessToken){void readPendingJoin().then(slug=>{if(active)router.replace(slug?`/join/${encodeURIComponent(slug)}`:'/children');});}});return ()=>{active=false;};},[router]);
+ useEffect(()=>{let active=true;void bootstrapSession().then(()=>{if(active && currentSession().parent?.accessToken){void readPendingJoin().then(slug=>{if(active)router.replace(slug?`/join/${encodeURIComponent(slug)}`:(currentSession().childId&&currentSession().child?.accessToken?'/journeys':'/children'));});}});return ()=>{active=false;};},[router]);
  async function send() {
  if(busy)return;
  const parsed=mobileSchema.safeParse(normalizeDigits(mobile));
@@ -32,7 +32,7 @@ export function ParentLoginForm() {
  const parsed=otpSchema.safeParse(normalizeDigits(code));
  if(!parsed.success){setOtpError(parsed.error.issues[0]?.message??'کد نامعتبر است.');return;}
  setBusy(true);setOtpError('');
- try {await verifyParentOtp(verifiedMobile,parsed.data);Keyboard.dismiss();sheet.current?.dismiss();const pending=await readPendingJoin();router.replace(pending?`/join/${encodeURIComponent(pending)}`:'/children');}
+ try {await verifyParentOtp(verifiedMobile,parsed.data);Keyboard.dismiss();sheet.current?.dismiss();const pending=await readPendingJoin();router.replace(pending?`/join/${encodeURIComponent(pending)}`:(currentSession().childId&&currentSession().child?.accessToken?'/journeys':'/children'));}
  catch(e:unknown){setOtpError(errorMessage(e));}finally{setBusy(false);}
  }
  return <View style={{width:'100%',alignSelf:'center',gap:22}}>
