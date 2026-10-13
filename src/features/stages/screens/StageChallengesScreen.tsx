@@ -1,5 +1,5 @@
 import { useEffect,useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams,useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ import { getStageChallenges,getJourneyStages } from '../api/stagesApi';
 import { challengeLocked,nextChallengeId } from '../model/challenges';
 import { ChallengeCard } from '../components/ChallengeCard';
 import { StageResultSheet } from '@/features/results/components/StageResultSheet';
+import { tabArtwork } from '@/components/navigation/tabArtwork';
 const message=(e:unknown)=>e instanceof Error?e.message:'خطای ناشناخته';
 export function StageChallengesScreen({stageId}:{stageId:string}){
  const router=useRouter();const insets=useSafeAreaInsets();const params=useLocalSearchParams<{result?:string}>();const [childId,setChildId]=useState('');const [ready,setReady]=useState(false);const [resultOpen,setResultOpen]=useState(false);
@@ -29,7 +30,8 @@ export function StageChallengesScreen({stageId}:{stageId:string}){
  const completeCount=query.data?.completedCount??0;const totalCount=query.data?.totalCount??0;const complete=totalCount>0&&completeCount>=totalCount;
  const percentage=totalCount>0?Math.round(Math.min(100,completeCount/totalCount*100)):0;
  const journeyBack=()=>{if(journeyId)router.replace({pathname:'/journeys/[journeyId]',params:{journeyId}});else router.replace('/journeys');};
- return <AppScreen contentStyle={{gap:14,paddingTop:14,paddingBottom:110+insets.bottom,backgroundColor:'#FFFFFF'}}>
+ return <View style={{flex:1,backgroundColor:'#FFFFFF'}}>
+ <AppScreen contentStyle={{gap:14,paddingTop:14,paddingBottom:160+insets.bottom,backgroundColor:'#FFFFFF'}}>
   <View style={{flexDirection:'row-reverse',justifyContent:'space-between',alignItems:'center',marginBottom:12,gap:12}}>
    <AppText variant="title" weight="700" numberOfLines={1} style={{flex:1,textAlign:'right',color:'#22236A',fontSize:18}}>
     چالش‌های {title??'مرحله'}
@@ -88,5 +90,25 @@ export function StageChallengesScreen({stageId}:{stageId:string}){
    open={resultOpen} onClose={()=>setResultOpen(false)}
    onContinue={()=>{setResultOpen(false);router.replace('/journeys');}}
    onReplay={()=>{setResultOpen(false);router.replace({pathname:'/stages/[stageId]',params:{stageId}});}}/>}
- </AppScreen>;
+ </AppScreen>
+ <View style={{
+  position:'absolute',bottom:10+insets.bottom,left:18,right:18,height:64,
+  backgroundColor:'#FFFAF4',borderRadius:32,borderWidth:2,borderColor:'#FFFFFF',
+  flexDirection:'row',justifyContent:'space-around',alignItems:'center',
+  shadowColor:'#55412C',shadowOpacity:0.18,shadowRadius:11,elevation:8,
+ }}>
+  {([
+   {key:'trophy',href:'/leaderboard',label:'رتبه‌بندی'},
+   {key:'home',href:'/journeys',label:'خانه'},
+   {key:'compass',href:'/parent',label:'بخش والدین'},
+  ] as const).map(item=>
+   <Pressable key={item.key} accessibilityRole="button" accessibilityLabel={item.label}
+    onPress={()=>router.replace(item.href)}
+    style={{width:64,height:60,alignItems:'center',justifyContent:'center'}}>
+    <Image source={{uri:tabArtwork[item.key]}} resizeMode="contain" style={{width:44,height:44}}/>
+    {item.key==='home'&&<View style={{position:'absolute',bottom:0,width:24,height:3,
+     borderRadius:2,backgroundColor:'#8141C6'}}/>}
+   </Pressable>)}
+ </View>
+ </View>;
 }
