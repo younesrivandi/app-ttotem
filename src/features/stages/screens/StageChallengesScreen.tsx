@@ -1,9 +1,9 @@
 import { useEffect,useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams,useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { AppScreen } from '@/components/layout/AppScreen';
+import { ScrollView } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
 import { EmptyState,ErrorState,LoadingState } from '@/components/ui/AsyncState';
@@ -30,8 +30,9 @@ export function StageChallengesScreen({stageId}:{stageId:string}){
  const completeCount=query.data?.completedCount??0;const totalCount=query.data?.totalCount??0;const complete=totalCount>0&&completeCount>=totalCount;
  const percentage=totalCount>0?Math.round(Math.min(100,completeCount/totalCount*100)):0;
  const journeyBack=()=>{if(journeyId)router.replace({pathname:'/journeys/[journeyId]',params:{journeyId}});else router.replace('/journeys');};
- return <View style={{flex:1,backgroundColor:'#FFFFFF'}}>
- <AppScreen contentStyle={{gap:14,paddingTop:14,paddingBottom:160+insets.bottom,backgroundColor:'#FFFFFF'}}>
+ return <SafeAreaView edges={['top','bottom','left','right']} style={{flex:1,backgroundColor:'#FFFFFF'}}>
+ <View style={{flex:1,backgroundColor:'#FFFFFF'}}>
+ <ScrollView keyboardShouldPersistTaps="handled" style={{flex:1,backgroundColor:'#FFFFFF'}} contentContainerStyle={{width:'100%',maxWidth:880,alignSelf:'center',paddingHorizontal:16,gap:14,paddingTop:14,paddingBottom:160+insets.bottom,backgroundColor:'#FFFFFF'}}>
   <View style={{flexDirection:'row-reverse',justifyContent:'space-between',alignItems:'center',marginBottom:12,gap:12}}>
    <AppText variant="title" weight="700" numberOfLines={1} style={{flex:1,textAlign:'right',color:'#22236A',fontSize:18}}>
     چالش‌های {title??'مرحله'}
@@ -90,7 +91,7 @@ export function StageChallengesScreen({stageId}:{stageId:string}){
    open={resultOpen} onClose={()=>setResultOpen(false)}
    onContinue={()=>{setResultOpen(false);router.replace('/journeys');}}
    onReplay={()=>{setResultOpen(false);router.replace({pathname:'/stages/[stageId]',params:{stageId}});}}/>}
- </AppScreen>
+ </ScrollView>
  <View style={{
   position:'absolute',bottom:10+insets.bottom,left:18,right:18,height:64,
   backgroundColor:'#FFFAF4',borderRadius:32,borderWidth:2,borderColor:'#FFFFFF',
@@ -110,5 +111,6 @@ export function StageChallengesScreen({stageId}:{stageId:string}){
      borderRadius:2,backgroundColor:'#8141C6'}}/>}
    </Pressable>)}
  </View>
- </View>;
+ </View>
+ </SafeAreaView>;
 }
