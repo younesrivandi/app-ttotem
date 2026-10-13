@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "lib": [
+      "ES2020"
+    ],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "outDir": ".stage11-test-build"
+  },
+  "include": [
+    "src/features/challenges/engine/gameEngine.ts",
+    "src/features/challenges/engine/types.ts"
+  ]
+}

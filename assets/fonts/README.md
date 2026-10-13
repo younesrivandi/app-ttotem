@@ -1,0 +1,1 @@
+No font binaries were found in the supplied original project archive. Stage 02 uses the platform system fallback while preserving RTL layout. To add a licensed Persian font, place OTF/TTF files here, install expo-font with `npx expo install expo-font`, then register font families via Expo's cross-platform useFonts route. Do not copy proprietary font files without permission.

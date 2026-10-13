@@ -1,0 +1,11 @@
+import {useMemo,useRef,useState} from 'react';
+import {Image,PanResponder,View} from 'react-native';
+import Svg,{Polyline} from 'react-native-svg';
+import type {Point,Stroke} from '../engine';
+import {AppButton} from '@/components/ui/AppButton';
+import {useAppTheme} from '@/theme/ThemeProvider';
+export function PathRenderer({imageUrl,strokes,onChange,disabled=false}:{imageUrl?:string;strokes:readonly Stroke[];onChange:(v:Stroke[])=>void;disabled?:boolean}){
+ const {colors}=useAppTheme();const active=useRef<Point[]>([]);const [preview,setPreview]=useState<Point[]>([]);const saved=useRef(strokes);saved.current=strokes;const change=useRef(onChange);change.current=onChange;const disabledRef=useRef(disabled);disabledRef.current=disabled;
+ const responder=useMemo(()=>PanResponder.create({onStartShouldSetPanResponder:()=>!disabledRef.current,onMoveShouldSetPanResponder:()=>!disabledRef.current,onPanResponderGrant:e=>{const {locationX:x,locationY:y}=e.nativeEvent;active.current=[{x,y}];setPreview(active.current);},onPanResponderMove:e=>{if(active.current.length>=4000)return;const {locationX:x,locationY:y}=e.nativeEvent;active.current=[...active.current,{x,y}];setPreview(active.current);},onPanResponderRelease:()=>{if(active.current.length>1)change.current([...saved.current,{points:active.current}]);active.current=[];setPreview([]);},onPanResponderTerminate:()=>{active.current=[];setPreview([]);}}),[]);
+ return <View style={{gap:12}}><View style={{height:280,borderColor:colors.border,borderWidth:1,borderRadius:12,overflow:'hidden',backgroundColor:colors.surface}}>{imageUrl?<Image source={{uri:imageUrl}} resizeMode="contain" style={{width:'100%',height:'100%',position:'absolute'}}/>:null}<View style={{flex:1}} {...responder.panHandlers}><Svg width="100%" height="100%" pointerEvents="none">{[...strokes.map(s=>s.points),preview].map((points,i)=>points.length>1?<Polyline key={i} points={points.map(p=>`${p.x},${p.y}`).join(' ')} fill="none" stroke={colors.primary} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round"/>:null)}</Svg></View></View><AppButton title="پاک کردن مسیر" variant="secondary" onPress={()=>onChange([])} disabled={disabled||strokes.length===0}/></View>;
+}

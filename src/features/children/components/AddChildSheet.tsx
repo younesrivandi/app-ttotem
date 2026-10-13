@@ -1,0 +1,54 @@
+import { forwardRef,useMemo,useState } from 'react';
+import { Pressable,ScrollView,View,Image } from 'react-native';
+import { BottomSheetModal,BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { AppButton } from '@/components/ui/AppButton';
+import { AppInput } from '@/components/ui/AppInput';
+import { AppText } from '@/components/ui/AppText';
+import { useAppTheme } from '@/theme/ThemeProvider';
+import { spacing } from '@/theme/tokens';
+import { daysInJalaliMonth,jalaliToIso,persianMonths } from '../model/jalali';
+import { validateChildForm,type CreateChildPayload } from '../model/child';
+import { avatarOptions,type Gender } from './ChildAvatar';
+export type AddChildSheetHandle=BottomSheetModal;
+type Props={saving:boolean;onSave:(payload:CreateChildPayload)=>Promise<void>;serverError:string;onClose:()=>void};
+function Choice({title,active,onPress}:{title:string;active:boolean;onPress:()=>void}) {
+ const {colors}=useAppTheme();return <Pressable accessibilityRole="button" accessibilityState={{selected:active}} onPress={onPress} style={{padding:10,minHeight:44,borderRadius:10,borderWidth:1,borderColor:active?colors.primary:colors.border,backgroundColor:active?colors.accentSoft:colors.surface}}><AppText>{title}</AppText></Pressable>;
+}
+export const AddChildSheet=forwardRef<AddChildSheetHandle,Props>(function AddChildSheet({saving,onSave,serverError,onClose},ref) {
+ const {colors}=useAppTheme();
+ const [firstName,setFirstName]=useState('');const [lastName,setLastName]=useState('');const [nationalCode,setNationalCode]=useState('');
+ const [gender,setGender]=useState<Gender>('boy');const [avatar,setAvatar]=useState(0);
+ const [year,setYear]=useState(1400);const [month,setMonth]=useState(1);const [day,setDay]=useState(1);
+ const [formError,setFormError]=useState('');
+ const maxDay=useMemo(()=>daysInJalaliMonth(year,month),[year,month]);
+ const validDay=Math.min(day,maxDay);
+ const submit=async()=>{
+ const result=validateChildForm(firstName,lastName,nationalCode);
+ if(!result.success){setFormError(result.error.issues[0]?.message??'ورودی نامعتبر است.');return;}
+ setFormError('');
+ await onSave({firstName:result.data.firstName,lastName:result.data.lastName,birthDate:jalaliToIso(year,month,validDay),nationalCode:result.data.nationalCode||null});
+ // Form only resets on successful mutation; errors remain visible for correction.
+ setFirstName('');setLastName('');setNationalCode('');setYear(1400);setMonth(1);setDay(1);setGender('boy');setAvatar(0);
+ };
+ const years=Array.from({length:18},(_,i)=>1405-i);
+ return <BottomSheetModal ref={ref} snapPoints={['90%']} enablePanDownToClose={!saving} onDismiss={onClose} backgroundStyle={{backgroundColor:colors.surface}} handleIndicatorStyle={{backgroundColor:colors.textMuted}}>
+ <BottomSheetScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:spacing.lg,gap:spacing.md,paddingBottom:spacing.xxl}}>
+ <AppText variant="title">افزودن کودک</AppText>
+ <AppInput label="نام" required value={firstName} onChangeText={setFirstName} maxLength={80}/>
+ <AppInput label="نام خانوادگی" value={lastName} onChangeText={setLastName} maxLength={100}/>
+ <AppInput label="کد ملی (اختیاری)" value={nationalCode} keyboardType="number-pad" onChangeText={setNationalCode} maxLength={10}/>
+ <AppText weight="700">تاریخ تولد (شمسی)</AppText>
+ <AppText tone="muted">روز: {validDay} | {persianMonths[month-1]} | سال: {year}</AppText>
+ <AppText>سال</AppText><ScrollView horizontal contentContainerStyle={{gap:8}}>{years.map(v=><Choice key={v} title={String(v)} active={v===year} onPress={()=>{setYear(v);setDay(d=>Math.min(d,daysInJalaliMonth(v,month)));}} />)}</ScrollView>
+ <AppText>ماه</AppText><ScrollView horizontal contentContainerStyle={{gap:8}}>{persianMonths.map((name,i)=><Choice key={name} title={name} active={month===i+1} onPress={()=>{setMonth(i+1);setDay(d=>Math.min(d,daysInJalaliMonth(year,i+1)));}} />)}</ScrollView>
+ <AppText>روز</AppText><ScrollView horizontal contentContainerStyle={{gap:8}}>{Array.from({length:maxDay},(_,i)=>i+1).map(v=><Choice key={v} title={String(v)} active={v===validDay} onPress={()=>setDay(v)} />)}</ScrollView>
+ <AppText weight="700">جنسیت (فقط انتخاب ظاهر آواتار)</AppText>
+ <View style={{flexDirection:'row-reverse',gap:8}}><Choice title="پسر" active={gender==='boy'} onPress={()=>{setGender('boy');setAvatar(0);}}/><Choice title="دختر" active={gender==='girl'} onPress={()=>{setGender('girl');setAvatar(0);}}/></View>
+ <AppText weight="700">انتخاب آواتار</AppText>
+ <View style={{flexDirection:'row-reverse',gap:12}}>{avatarOptions[gender].map((source,i)=><Pressable key={i} onPress={()=>setAvatar(i)} accessibilityRole="button" accessibilityLabel={`آواتار ${i+1}`} accessibilityState={{selected:avatar===i}} style={{borderColor:avatar===i?colors.primary:colors.border,borderWidth:2,borderRadius:36,padding:3}}><Image source={source} style={{width:48,height:48,borderRadius:24}} /></Pressable>)}</View>
+ <AppText tone="muted" variant="caption">آواتار و جنسیت در API فعلی ذخیره نمی‌شوند و انتخابشان پس از دریافت مجدد لیست ممکن است باقی نماند.</AppText>
+ {!!(formError||serverError)&&<AppText tone="error" accessibilityRole="alert">{formError||serverError}</AppText>}
+ <AppButton title="ذخیره پروفایل" loading={saving} disabled={saving} fullWidth onPress={()=>{void submit();}} />
+ <AppButton title="انصراف" variant="ghost" disabled={saving} onPress={onClose} fullWidth/>
+ </BottomSheetScrollView></BottomSheetModal>;
+});
