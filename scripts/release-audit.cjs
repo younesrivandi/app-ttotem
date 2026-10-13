@@ -26,11 +26,12 @@ for (const file of source) {
  const relative = path.relative(root,file).split(path.sep).join('/');
  const body = fs.readFileSync(file,'utf8');
  if (/from\s+['"]next(?:\/|['"])/.test(body)) errors.push(`Next.js import in ${relative}`);
- if (/\bwindow\.localStorage\b/.test(body) && !relative.endsWith('src/features/auth/services/deviceInfo.web.ts')) errors.push(`Review window.localStorage usage in ${relative}`);
+ if (/\bwindow\.localStorage\b/.test(body) && !['src/features/auth/services/deviceInfo.web.ts', 'src/services/storage/credentialStore.web.ts'].includes(relative)) errors.push(`Review window.localStorage usage in ${relative}`);
 }
 console.log(`Static release audit: ${paths.length} route files, ${source.length} source files`);
 const release = process.argv.includes('--release');
 if (release) {
+ check(!/\bwindow\.localStorage\b/.test(fs.readFileSync(path.join(root, 'src/services/storage/credentialStore.web.ts'), 'utf8')), 'Web refresh tokens currently persist in JavaScript-readable localStorage. Replace with HttpOnly cookie/BFF before production release');
  for (const name of ['TTOTEM_ANDROID_PACKAGE','TTOTEM_IOS_BUNDLE_ID','EAS_PROJECT_ID','EXPO_PUBLIC_API_BASE_URL'])
   check(Boolean(process.env[name]), `Missing environment variable ${name}`);
  const api = process.env.EXPO_PUBLIC_API_BASE_URL;
