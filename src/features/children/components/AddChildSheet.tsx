@@ -9,7 +9,7 @@ import { useAppTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 import { daysInJalaliMonth,jalaliToIso,persianMonths } from '../model/jalali';
 import { validateChildForm,type CreateChildPayload } from '../model/child';
-import { avatarOptions,type Gender } from './ChildAvatar';
+import { avatarOptions,avatarPaths,type Gender } from './ChildAvatar';
 export type AddChildSheetHandle=BottomSheetModal;
 type Props={saving:boolean;onSave:(payload:CreateChildPayload)=>Promise<void>;serverError:string};
 function Choice({title,active,onPress}:{title:string;active:boolean;onPress:()=>void}) {
@@ -27,7 +27,7 @@ export const AddChildSheet=forwardRef<AddChildSheetHandle,Props>(function AddChi
  const result=validateChildForm(firstName,lastName,nationalCode);
  if(!result.success){setFormError(result.error.issues[0]?.message??'ورودی نامعتبر است.');return;}
  setFormError('');
- await onSave({firstName:result.data.firstName,lastName:result.data.lastName,birthDate:jalaliToIso(year,month,validDay),nationalCode:result.data.nationalCode||null});
+ await onSave({firstName:result.data.firstName,lastName:result.data.lastName,birthDate:jalaliToIso(year,month,validDay),nationalCode:result.data.nationalCode||null,gender,avatarId:null,avatarUrl:avatarPaths[gender][avatar]});
  // Form only resets on successful mutation; errors remain visible for correction.
  setFirstName('');setLastName('');setNationalCode('');setYear(1400);setMonth(1);setDay(1);setGender('boy');setAvatar(0);
  };
