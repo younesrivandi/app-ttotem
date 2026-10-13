@@ -78,24 +78,30 @@ export function JourneysScreen() {
     carouselRef.current?.scrollTo({ index: next, animated: false });
   }, [journeys]);
 
+  // Keep snapping and selecting separate: a swipe must not trigger a second scroll.
+  const activateIndex = (index: number) => {
+    const item = journeys[index];
+    if (!item || selectedId.current === item.journeyId) return;
+    selectedId.current = item.journeyId;
+    setSelected(index);
+    if (!item.isLocked && !mutation.isPending) mutation.mutate(item.journeyId);
+  };
   const selectIndex = (index: number) => {
     if (index < 0 || index >= journeys.length) return;
-    setSelected(index);
-    const item = journeys[index];
-    if (!item) return;
-    selectedId.current = item.journeyId;
     carouselRef.current?.scrollTo({ index, animated: true });
-    if (!item.isLocked && !mutation.isPending) mutation.mutate(item.journeyId);
+    // Selection is committed by onSnapToItem after the card reaches the center.
   };
   const open = (index: number) => {
     const item = journeys[index];
-    if (!item || item.isLocked) return;
+    if (!item) return;
     if (index !== selected) { selectIndex(index); return; }
+    if (item.isLocked) return;
     router.push({ pathname: '/journeys/[journeyId]', params: { journeyId: item.journeyId } });
   };
 
   const canvasWidth = Math.min(width, 560);
   const cardWidth = Math.min(224, Math.max(172, canvasWidth * 0.52));
+  const itemSize = cardWidth * 0.8;
   const cardHeight = Math.min(310, Math.max(236, height * 0.34));
 
   if (!ready) return <AppScreen><LoadingState title="بررسی نشست کودک…" /></AppScreen>;
@@ -129,19 +135,21 @@ export function JourneysScreen() {
             <>
               <View accessibilityLabel="فهرست سفرها" style={{ height: cardHeight + 26 }}>
                 <Carousel
-                  key={childId}
+                  key={`${childId}:${journeys.map(j => j.journeyId).join(',')}`}
                   ref={carouselRef}
                   style={{ width: canvasWidth, height: cardHeight + 26, overflow: 'visible' }}
-                  itemSize={cardWidth + 18}
+                  itemSize={itemSize}
                   data={journeys}
                   keyExtractor={item => item.journeyId}
                   defaultIndex={selected}
-                  loop={journeys.length > 2}
+                  loop={journeys.length > 1}
+                  autoFillData={journeys.length === 2}
+                  windowSize={Math.max(3, journeys.length)}
                   snapMode="nearest"
                   animation={{ type: 'spring', damping: 20, stiffness: 180 }}
-                  layout={{ type: 'parallax', offset: 55, scale: 0.83, adjacentScale: 0.72 }}
+                  layout={{ type: 'parallax', offset: cardWidth * 0.56, scale: 1, adjacentScale: 0.72 }}
                   onSnapToItem={index => {
-                    if (index !== selected) selectIndex(index);
+                    activateIndex(index);
                   }}
                   renderItem={({ item, index }) =>
                     <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center', paddingVertical: 10 }}>
