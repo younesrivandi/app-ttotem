@@ -118,12 +118,12 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
             <AppText style={{ fontSize: 24, lineHeight: 32, textAlign: 'center' }}>🔒</AppText>
           </View>}
           {finished && !locked && <View pointerEvents="none" style={{
-            position: 'absolute', top: NODE_SIZE * 0.55, left: NODE_SIZE * 0.34,
-            width: NODE_SIZE * 0.32, height: NODE_SIZE * 0.29,
+            position: 'absolute', bottom: NODE_SIZE * 0.19,
+            left: (NODE_SIZE - 30) / 2, width: 30, height: 30,
             alignItems: 'center', justifyContent: 'center',
           }}>
-            <AppText weight="700" style={{ fontSize: 30, lineHeight: 34,
-              color: '#249B4A', textAlign: 'center',
+            <AppText weight="700" style={{ fontSize: 27, lineHeight: 30,
+              color: '#25A64A', textAlign: 'center',
               textShadowColor: '#FFFFFF', textShadowRadius: 2 }}>✓</AppText>
           </View>}
         </View>
