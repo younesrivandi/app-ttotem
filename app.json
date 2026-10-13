@@ -32,6 +32,9 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "androidNavigationBar": {
+      "visible": "sticky-immersive"
     }
   }
 }
