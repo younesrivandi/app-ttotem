@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, ImageBackground, Pressable, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Carousel, type CarouselRef } from 'react-native-reanimated-carousel';
@@ -64,7 +64,7 @@ export function JourneysScreen() {
   const children = childrenQuery.data ?? [];
   const childIndex = children.findIndex(child => child.childProfileId === childId);
   const child = childIndex >= 0 ? children[childIndex] : undefined;
-  const journeys = journeysQuery.data ?? [];
+  const journeys = useMemo(() => journeysQuery.data ?? [], [journeysQuery.data]);
   const mutation = useMutation({
     mutationFn: chooseJourney,
     onSuccess: async () => { await client.invalidateQueries({ queryKey: queryKeys.journeys(childId) }); },
@@ -85,7 +85,7 @@ export function JourneysScreen() {
     lastProgressIndex.current = next;
     setSelected(next);
     carouselRef.current?.scrollTo({ index: next, animated: false });
-  }, [childId, journeyIds]);
+  }, [childId, journeyIds, journeys]);
 
   // Keep snapping and selecting separate: a swipe must not trigger a second scroll.
   const activateIndex = (index: number) => {
