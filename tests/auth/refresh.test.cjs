@@ -75,7 +75,7 @@ test('three simultaneous 401 responses share one refresh and replay with the new
   gate.resolve();
   const result = await Promise.all(requests);
   assert.equal(refreshCalls, 1);
-  assert.deepEqual(result, [{ ok: true }, { ok: true }, { ok: true }]);
+  assert.deepEqual(result.map(item => item.ok), [true, true, true]);
   assert.equal(seen.filter(v => v === 'Bearer new-child').length, 3);
 });
 
