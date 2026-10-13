@@ -62,7 +62,7 @@ export default function MainTabs() {
     <Tabs.Screen name="index" options={{ href: null }} />
     <Tabs.Screen name="leaderboard" options={{
       title: 'رتبه‌بندی', tabBarAccessibilityLabel: 'رتبه‌بندی',
-      tabBarIcon: ({ focused }) => <ArtworkIcon name="compass" focused={focused} />,
+      tabBarIcon: ({ focused }) => <ArtworkIcon name="trophy" focused={focused} />,
     }} />
     <Tabs.Screen name="journeys/index" options={{
       title: 'خانه', tabBarAccessibilityLabel: 'سفرها',
@@ -70,7 +70,7 @@ export default function MainTabs() {
     }} />
     <Tabs.Screen name="parent" options={{
       title: 'والد', tabBarAccessibilityLabel: 'بخش والد',
-      tabBarIcon: ({ focused }) => <ArtworkIcon name="trophy" focused={focused} />,
+      tabBarIcon: ({ focused }) => <ArtworkIcon name="compass" focused={focused} />,
     }} />
     <Tabs.Screen name="children" options={{ href: null, tabBarStyle: { display: 'none' } }} />
   </Tabs>;
