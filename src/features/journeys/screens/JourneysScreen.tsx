@@ -1,57 +1,154 @@
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Image, ImageBackground, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppScreen } from '@/components/layout/AppScreen';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/AsyncState';
+import { ChildAvatar } from '@/features/children/components/ChildAvatar';
+import { listChildren } from '@/features/children/api/childrenApi';
 import { spacing } from '@/theme/tokens';
-import { bootstrapSession,currentSession,subscribeSession } from '@/services/auth/session';
+import { bootstrapSession, currentSession, subscribeSession } from '@/services/auth/session';
 import { queryKeys } from '@/services/api/queryKeys';
-import { listJourneys,chooseJourney } from '../api/journeysApi';
+import { listJourneys, chooseJourney } from '../api/journeysApi';
 import { JourneyCard } from '../components/JourneyCard';
-const CARD_WIDTH=250, CARD_GAP=12;
-const errorMessage=(e:unknown)=>e instanceof Error?e.message:'خطایی رخ داد.';
+
+const background = require('../../../../assets/image/bg-app.png');
+const logo = require('../../../../assets/image/logo.png');
+const errorMessage = (e: unknown) => e instanceof Error ? e.message : 'خطایی رخ داد.';
+
 export function JourneysScreen() {
- const router=useRouter(),client=useQueryClient(),scrollRef=useRef<ScrollView>(null);
- const [ready,setReady]=useState(false),[childId,setChildId]=useState(''),[selected,setSelected]=useState(0);
- const selectedId=useRef<string|null>(null);
- useEffect(()=>{let active=true;const sync=()=>{if(active){setChildId(currentSession().childId??'');setReady(true);}};void bootstrapSession().then(sync);const unsubscribe=subscribeSession(sync);return()=>{active=false;unsubscribe();};},[]);
- const authorized=ready&&!!currentSession().child?.accessToken;
- const query=useQuery({queryKey:queryKeys.journeys(childId),queryFn:listJourneys,enabled:authorized&&!!childId});
- const journeys=query.data??[];
- const mutation=useMutation({mutationFn:chooseJourney,onSuccess:async()=>{await client.invalidateQueries({queryKey:queryKeys.journeys(childId)});}});
- // Restore the backend-marked most recently selected journey when available.
- useEffect(()=>{if(!journeys.length)return;const current=selectedId.current;const index=current?journeys.findIndex(j=>j.journeyId===current):-1;
- const latest=journeys.findIndex(j=>j.isLatestSelected);const next=index>=0?index:latest>=0?latest:Math.min(1,journeys.length-1);
- setSelected(next); selectedId.current=journeys[next]?.journeyId??null;
- },[journeys]);
- const selectIndex=(index:number)=>{if(index<0||index>=journeys.length)return;setSelected(index);const item=journeys[index];if(!item)return;selectedId.current=item.journeyId;scrollRef.current?.scrollTo({x:Math.max(0,index*(CARD_WIDTH+CARD_GAP)-24),animated:true});
- // Legacy client selected on changing active card. Avoid re-sending selection for locked entries.
- if(!item.isLocked && !mutation.isPending) mutation.mutate(item.journeyId);
- };
- const open=(index:number)=>{const item=journeys[index];if(!item||item.isLocked)return;if(index!==selected){selectIndex(index);return;}router.push({pathname:'/journeys/[journeyId]',params:{journeyId:item.journeyId}});};
- if(!ready)return <AppScreen><LoadingState title="بررسی نشست کودک…"/></AppScreen>;
- if(!authorized || !childId)return <AppScreen contentStyle={{gap:spacing.md}}><ErrorState title="پروفایل کودک انتخاب نشده" description="برای دیدن سفرها، ابتدا کودک را انتخاب کنید."/><AppButton title="انتخاب کودک" onPress={()=>router.push('/children')}/></AppScreen>;
- return <AppScreen contentStyle={{gap:spacing.md}}>
-  <AppText variant="title" weight="700">سفرهای من</AppText>
-  <AppText tone="muted">سفرها را به چپ و راست ورق بزن، سپس وارد سفر انتخاب‌شده شو.</AppText>
-  {query.isLoading?<LoadingState title="دریافت سفرها…"/>:query.isError?<ErrorState description={errorMessage(query.error)} onRetry={()=>{void query.refetch();}}/>:journeys.length===0?<EmptyState title="هنوز سفری آماده نشده است"/>:
-  <>
-   <ScrollView ref={scrollRef} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:CARD_GAP,paddingVertical:spacing.sm}} accessibilityLabel="فهرست افقی سفرها" style={{flexGrow:0}}>
-    {journeys.map((journey,index)=><JourneyCard key={journey.journeyId} journey={journey} index={index} active={index===selected} onPress={()=>open(index)}/>)}
-   </ScrollView>
-   <View style={{flexDirection:'row-reverse',alignItems:'center',justifyContent:'center',gap:spacing.sm}}>
-    <AppButton title="قبلی" variant="outline" onPress={()=>selectIndex((selected-1+journeys.length)%journeys.length)}/>
-    <AppText>{selected+1} از {journeys.length}</AppText>
-    <AppButton title="بعدی" variant="outline" onPress={()=>selectIndex((selected+1)%journeys.length)}/>
-   </View>
-   <View style={{flexDirection:'row-reverse',justifyContent:'center',gap:spacing.xs,flexWrap:'wrap'}}>
-    {journeys.map((journey,index)=><AppButton key={journey.journeyId} size="sm" title={index===selected?'●':'○'} variant="ghost" accessibilityLabel={`سفر ${index+1}`} onPress={()=>selectIndex(index)}/>)}
-   </View>
-   {!!mutation.error&&<AppText tone="error" accessibilityRole="alert">{errorMessage(mutation.error)}</AppText>}
-   <AppButton fullWidth title={journeys[selected]?.isLocked?'این سفر قفل است':'ورود به سفر'} disabled={!!journeys[selected]?.isLocked||mutation.isPending} loading={mutation.isPending} onPress={()=>open(selected)}/>
-  </>}
- </AppScreen>;
+  const router = useRouter();
+  const client = useQueryClient();
+  const scrollRef = useRef<ScrollView>(null);
+  const { width, height } = useWindowDimensions();
+  const [ready, setReady] = useState(false);
+  const [childId, setChildId] = useState('');
+  const [selected, setSelected] = useState(0);
+  const selectedId = useRef<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const sync = () => {
+      if (active) {
+        const nextId = currentSession().childId ?? '';
+        setChildId(previous => {
+          if (previous !== nextId) { selectedId.current = null; setSelected(0); }
+          return nextId;
+        });
+        setReady(true);
+      }
+    };
+    const unsubscribe = subscribeSession(sync);
+    void bootstrapSession().then(sync);
+    return () => { active = false; unsubscribe(); };
+  }, []);
+
+  const session = currentSession();
+  const authorized = ready && !!session.child?.accessToken;
+  const journeysQuery = useQuery({
+    queryKey: queryKeys.journeys(childId),
+    queryFn: listJourneys,
+    enabled: authorized && !!childId,
+  });
+  const childrenQuery = useQuery({
+    queryKey: queryKeys.children,
+    queryFn: listChildren,
+    enabled: authorized && !!session.parent?.accessToken,
+  });
+  const children = childrenQuery.data ?? [];
+  const childIndex = children.findIndex(child => child.childProfileId === childId);
+  const child = childIndex >= 0 ? children[childIndex] : undefined;
+  const journeys = journeysQuery.data ?? [];
+  const mutation = useMutation({
+    mutationFn: chooseJourney,
+    onSuccess: async () => { await client.invalidateQueries({ queryKey: queryKeys.journeys(childId) }); },
+  });
+
+  useEffect(() => {
+    if (!journeys.length) return;
+    const previousIndex = selectedId.current ? journeys.findIndex(j => j.journeyId === selectedId.current) : -1;
+    const latestIndex = journeys.findIndex(j => j.isLatestSelected);
+    const next = previousIndex >= 0 ? previousIndex : latestIndex >= 0 ? latestIndex : 0;
+    setSelected(next);
+    selectedId.current = journeys[next]?.journeyId ?? null;
+  }, [journeys]);
+
+  const selectIndex = (index: number) => {
+    if (index < 0 || index >= journeys.length) return;
+    setSelected(index);
+    const item = journeys[index];
+    if (!item) return;
+    selectedId.current = item.journeyId;
+    scrollRef.current?.scrollTo({ x: index * (cardWidth + 12), animated: true });
+    if (!item.isLocked && !mutation.isPending) mutation.mutate(item.journeyId);
+  };
+  const open = (index: number) => {
+    const item = journeys[index];
+    if (!item || item.isLocked) return;
+    if (index !== selected) { selectIndex(index); return; }
+    router.push({ pathname: '/journeys/[journeyId]', params: { journeyId: item.journeyId } });
+  };
+
+  const canvasWidth = Math.min(width, 560);
+  const cardWidth = Math.min(224, Math.max(172, canvasWidth * 0.52));
+  const cardHeight = Math.min(310, Math.max(236, height * 0.34));
+
+  if (!ready) return <AppScreen><LoadingState title="بررسی نشست کودک…" /></AppScreen>;
+  if (!authorized || !childId) return <AppScreen contentStyle={{ gap: spacing.md }}>
+    <ErrorState title="پروفایل کودک انتخاب نشده" description="برای دیدن سفرها، ابتدا کودک را انتخاب کنید." />
+    <AppButton title="انتخاب کودک" onPress={() => router.push('/children')} />
+  </AppScreen>;
+
+  return <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: '#e4eee1' }}>
+    <View style={{ flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center', overflow: 'hidden' }}>
+      <ImageBackground source={background} resizeMode="cover" style={{ flex: 1 }} imageStyle={{ width: '100%', height: '100%' }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 22 }}>
+          <Pressable onPress={() => router.push('/children')} accessibilityRole="button" accessibilityLabel="مدیریت کودکان" hitSlop={10}
+            style={{ borderRadius: 999, padding: 4, backgroundColor: '#fff', shadowColor: '#8c30db', shadowOpacity: 0.8, shadowRadius: 13, elevation: 9 }}>
+            {child
+              ? <ChildAvatar child={child} index={childIndex} size={56} />
+              : <Image source={require('../../../../assets/avatars/boy-01.png')} style={{ height: 56, width: 56, borderRadius: 28 }} />}
+          </Pressable>
+          <View accessibilityLabel={`امتیاز کودک: ${child?.totalScore ?? 0}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: 'rgba(255,255,255,0.94)', borderRadius: 40, borderWidth: 2, borderColor: '#fff' }}>
+            <AppText weight="700" style={{ color: '#19156b', fontSize: 17 }}>{child?.totalScore ?? 0}</AppText>
+            <AppText style={{ fontSize: 23 }}>⭐</AppText>
+          </View>
+        </View>
+
+        <Image source={logo} resizeMode="contain" accessible accessibilityLabel="تی تو تم" style={{ alignSelf: 'center', width: Math.min(canvasWidth * 0.53, 230), height: 87, marginTop: 9 }} />
+
+        <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 24 }}>
+          {journeysQuery.isLoading ? <LoadingState title="دریافت سفرها…" /> :
+            journeysQuery.isError ? <ErrorState description={errorMessage(journeysQuery.error)} onRetry={() => { void journeysQuery.refetch(); }} /> :
+            journeys.length === 0 ? <EmptyState title="هنوز سفری آماده نشده است" /> :
+            <>
+              <ScrollView ref={scrollRef} horizontal showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ alignItems: 'flex-end', gap: 12, paddingHorizontal: (canvasWidth - cardWidth) / 2, paddingVertical: 12 }}
+                snapToInterval={cardWidth + 12} decelerationRate="fast"
+                onMomentumScrollEnd={event => {
+                  const index = Math.round(event.nativeEvent.contentOffset.x / (cardWidth + 12));
+                  if (index !== selected) selectIndex(index);
+                }}
+                accessibilityLabel="فهرست سفرها" style={{ flexGrow: 0 }}>
+                {journeys.map((journey, index) =>
+                  <JourneyCard key={journey.journeyId} journey={journey} index={index} active={index === selected}
+                    width={cardWidth} height={cardHeight} onPress={() => open(index)} />)}
+              </ScrollView>
+              <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginVertical: 8 }}>
+                {journeys.map((journey, index) =>
+                  <Pressable key={journey.journeyId} accessibilityRole="button" accessibilityLabel={`انتخاب سفر ${index + 1}`}
+                    accessibilityState={{ selected: index === selected }} onPress={() => selectIndex(index)}
+                    style={{ minWidth: 24, minHeight: 24, alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: index === selected ? '#fff' : '#b2a8a2' }} />
+                  </Pressable>)}
+              </View>
+              {!!mutation.error && <AppText tone="error" accessibilityRole="alert" style={{ textAlign: 'center' }}>{errorMessage(mutation.error)}</AppText>}
+            </>}
+        </View>
+      </ImageBackground>
+    </View>
+  </SafeAreaView>;
 }
