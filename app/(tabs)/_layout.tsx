@@ -9,7 +9,7 @@ type TabArtworkName = keyof typeof tabArtwork;
 function ArtworkIcon({ name, focused }: { name: TabArtworkName; focused: boolean }) {
   return <View style={{
     width: 58, height: 54, alignItems: 'center', justifyContent: 'center',
-    transform: [{ translateY: 6 }],
+    transform: [{ translateY: -3 }],
   }}>
     <Image source={{ uri: tabArtwork[name] }} resizeMode="contain"
       style={{ width: 46, height: 46 }} />
