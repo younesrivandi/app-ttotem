@@ -8,12 +8,13 @@ import { bootstrapSession, currentSession, subscribeSession } from '@/services/a
 type TabArtworkName = keyof typeof tabArtwork;
 function ArtworkIcon({ name, focused }: { name: TabArtworkName; focused: boolean }) {
   return <View style={{
-    width: 64, height: 64, alignItems: 'center', justifyContent: 'center',
+    width: 58, height: 54, alignItems: 'center', justifyContent: 'center',
+    transform: [{ translateY: 6 }],
   }}>
     <Image source={{ uri: tabArtwork[name] }} resizeMode="contain"
-      style={{ width: 48, height: 48 }} />
+      style={{ width: 46, height: 46 }} />
     {focused && <View style={{
-      position: 'absolute', bottom: 1, width: 24, height: 3,
+      position: 'absolute', bottom: 0, width: 24, height: 3,
       borderRadius: 2, backgroundColor: '#8141C6',
     }} />}
   </View>;
@@ -46,11 +47,12 @@ export default function MainTabs() {
     tabBarShowLabel: false,
     tabBarActiveTintColor: colors.primary,
     tabBarInactiveTintColor: colors.textMuted,
-    tabBarItemStyle: { alignItems: 'center', justifyContent: 'center', padding: 0 },
+    tabBarItemStyle: { alignItems: 'center', justifyContent: 'center', padding: 0, height: 64 },
+    tabBarIconStyle: { width: 58, height: 54, alignItems: 'center', justifyContent: 'center' },
     tabBarStyle: {
       position: 'absolute', backgroundColor: '#fffaf4',
       borderTopColor: '#fff', borderTopWidth: 2,
-      borderRadius: 36, height: 78, marginHorizontal: 18,
+      borderRadius: 32, height: 64, marginHorizontal: 18,
       marginBottom: 10, paddingTop: 0, paddingBottom: 0,
       shadowColor: '#55412c', shadowOpacity: 0.18,
       shadowRadius: 11, elevation: 8,
