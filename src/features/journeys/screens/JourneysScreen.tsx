@@ -29,6 +29,7 @@ export function JourneysScreen() {
   const [childId, setChildId] = useState('');
   const [selected, setSelected] = useState(0);
   const selectedId = useRef<string | null>(null);
+  const initialSelectionFor = useRef('');
 
   useEffect(() => {
     let active = true;
@@ -36,7 +37,7 @@ export function JourneysScreen() {
       if (active) {
         const nextId = currentSession().childId ?? '';
         setChildId(previous => {
-          if (previous !== nextId) { selectedId.current = null; setSelected(0); }
+          if (previous !== nextId) { selectedId.current = null; initialSelectionFor.current = ''; setSelected(0); }
           return nextId;
         });
         setReady(true);
@@ -68,15 +69,21 @@ export function JourneysScreen() {
     onSuccess: async () => { await client.invalidateQueries({ queryKey: queryKeys.journeys(childId) }); },
   });
 
+  // Restore the initial selection once per child and journey set. Query invalidation
+  // must never jump a looping carousel back to its initial physical offset.
+  const journeyIds = journeys.map(j => j.journeyId).join('|');
   useEffect(() => {
     if (!journeys.length) return;
-    const previousIndex = selectedId.current ? journeys.findIndex(j => j.journeyId === selectedId.current) : -1;
-    const latestIndex = journeys.findIndex(j => j.isLatestSelected);
-    const next = previousIndex >= 0 ? previousIndex : latestIndex >= 0 ? latestIndex : 0;
-    setSelected(next);
+    const datasetKey = childId + ':' + journeyIds;
+    if (initialSelectionFor.current === datasetKey) return;
+    initialSelectionFor.current = datasetKey;
+    const existing = selectedId.current ? journeys.findIndex(j => j.journeyId === selectedId.current) : -1;
+    const latest = journeys.findIndex(j => j.isLatestSelected);
+    const next = existing >= 0 ? existing : latest >= 0 ? latest : 0;
     selectedId.current = journeys[next]?.journeyId ?? null;
+    setSelected(next);
     carouselRef.current?.scrollTo({ index: next, animated: false });
-  }, [journeys]);
+  }, [childId, journeyIds]);
 
   // Keep snapping and selecting separate: a swipe must not trigger a second scroll.
   const activateIndex = (index: number) => {
@@ -101,7 +108,9 @@ export function JourneysScreen() {
 
   const canvasWidth = Math.min(width, 560);
   const cardWidth = Math.min(224, Math.max(172, canvasWidth * 0.52));
-  const itemSize = cardWidth * 0.8;
+  // In v5 the snap step must match the viewport for centered parallax items.
+  // Smaller itemSize with wider cards caused the visible overlap and left alignment.
+  const itemSize = canvasWidth;
   const cardHeight = Math.min(310, Math.max(236, height * 0.34));
 
   if (!ready) return <AppScreen><LoadingState title="بررسی نشست کودک…" /></AppScreen>;
@@ -137,17 +146,17 @@ export function JourneysScreen() {
                 <Carousel
                   key={`${childId}:${journeys.map(j => j.journeyId).join(',')}`}
                   ref={carouselRef}
-                  style={{ width: canvasWidth, height: cardHeight + 26, overflow: 'visible' }}
+                  style={{ width: canvasWidth, height: cardHeight + 26, overflow: 'hidden' }}
                   itemSize={itemSize}
                   data={journeys}
                   keyExtractor={item => item.journeyId}
                   defaultIndex={selected}
                   loop={journeys.length > 1}
                   autoFillData={journeys.length === 2}
-                  windowSize={Math.max(3, journeys.length)}
+                  windowSize={Math.max(5, journeys.length)}
                   snapMode="nearest"
                   animation={{ type: 'spring', damping: 20, stiffness: 180 }}
-                  layout={{ type: 'parallax', offset: cardWidth * 0.56, scale: 1, adjacentScale: 0.72 }}
+                  layout={{ type: 'parallax', offset: Math.min(canvasWidth * 0.37, 150), scale: 0.84, adjacentScale: 0.76 }}
                   onSnapToItem={index => {
                     activateIndex(index);
                   }}
