@@ -1,5 +1,4 @@
 import {useEffect,useRef,useState} from 'react';
-import {View} from 'react-native';
 import {useRouter} from 'expo-router';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {AppScreen} from '@/components/layout/AppScreen';
