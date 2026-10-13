@@ -160,7 +160,6 @@ export function JourneysScreen() {
                   keyExtractor={item => item.journeyId}
                   defaultIndex={selected}
                   loop={journeys.length > 1}
-                  autoFillData={journeys.length === 2}
                   windowSize={Math.max(5, journeys.length)}
                   snapMode="page"
                   onProgressChange={handleProgress}
