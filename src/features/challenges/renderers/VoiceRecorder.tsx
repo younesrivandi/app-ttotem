@@ -7,13 +7,14 @@ import {gameHaptics} from '../services/feedback';
 
 type Props={
  disabled?:boolean;
+ expectedText?:string;
  onRecorded:(dataUrl:string)=>void;
  onRecordingChange?:(recording:boolean)=>void;
 };
 const errorText=(e:unknown)=>e instanceof Error?e.message:'خطا در ضبط صدا';
 const format=(seconds:number)=>`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;
 
-export function VoiceRecorder({disabled=false,onRecorded,onRecordingChange}:Props){
+export function VoiceRecorder({disabled=false,expectedText,onRecorded,onRecordingChange}:Props){
  const recorder=useAudioRecorder(RecordingPresets.HIGH_QUALITY);
  const [recording,setRecording]=useState(false);
  const [busy,setBusy]=useState(false);
@@ -103,6 +104,7 @@ export function VoiceRecorder({disabled=false,onRecorded,onRecordingChange}:Prop
  };
  return <View style={{alignItems:'center',justifyContent:'center',paddingVertical:28,gap:16,
   backgroundColor:'#FFF9EF',borderRadius:28,borderWidth:1,borderColor:'#F2EADD'}}>
+  {!!expectedText?.trim()&&<AppText weight="700" style={{fontSize:23,lineHeight:38,color:'#263B78',textAlign:'center',paddingHorizontal:22}}>{expectedText}</AppText>}
   <View style={{width:210,height:210,alignItems:'center',justifyContent:'center'}}>
    <Animated.View pointerEvents="none" style={{position:'absolute',height:190,width:190,borderRadius:95,
     backgroundColor:'#9072DB',opacity:halo.interpolate({inputRange:[0,1],outputRange:[0.1,0.25]}),
