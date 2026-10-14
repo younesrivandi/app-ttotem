@@ -12,7 +12,7 @@ import { queryKeys } from '@/services/api/queryKeys';
 import { listJourneys } from '@/features/journeys/api/journeysApi';
 import { getJourneyStages } from '../api/stagesApi';
 import { tabArtwork } from '@/components/navigation/tabArtwork';
-import { completed, isStageLocked, stageStars } from '../model/stages';
+import { completed, isJourneyStageLocked, resetStoryRun, stageStars } from '../model/stages';
 
 const message = (e: unknown) => e instanceof Error ? e.message : 'خطای ناشناخته';
 const stageArtwork = require('../../../../assets/image/item.png');
@@ -94,7 +94,7 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
         strokeLinecap="round" fill="none" opacity={0.96} />
     </Svg>
     {stages.map((stage, index) => {
-      const locked = isStageLocked(stage, index, stages);
+      const locked = isJourneyStageLocked(stage, index, stages, childId, journeyId);
       const finished = completed(stage);
       const titleText = stage.title ?? `مرحله ${index + 1}`;
       return <Pressable key={stage.stageId} disabled={locked}
@@ -144,7 +144,7 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
         alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18 }}>
         <AppText weight="700" numberOfLines={1} style={{ fontSize: 16, flex: 1, color: '#28356A' }}>{title}</AppText>
         <Pressable accessibilityRole="button" accessibilityLabel="بازگشت به سفرها"
-          onPress={() => router.replace('/journeys')}
+          onPress={() => { resetStoryRun(childId, journeyId); router.replace('/journeys'); }}
           style={{ width: 35, height: 35, backgroundColor: '#FFFFFF', borderRadius: 11,
             justifyContent: 'center', alignItems: 'center', marginLeft: 12,
             borderColor: '#EEE2D3', borderWidth: 1 }}>
@@ -235,7 +235,7 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
             ] as const).map(item =>
               <Pressable key={item.key} accessibilityRole="button"
                 accessibilityLabel={item.key === 'home' ? 'خانه' : item.key === 'trophy' ? 'رتبه‌بندی' : 'بخش والدین'}
-                onPress={() => router.replace(item.href)}
+                onPress={() => { resetStoryRun(childId, journeyId); router.replace(item.href); }}
                 style={{ width: 64, height: 60, justifyContent: 'center', alignItems: 'center' }}>
                 <Image source={{ uri: tabArtwork[item.key] }} resizeMode="contain"
                   style={{ width: 44, height: 44 }} />
