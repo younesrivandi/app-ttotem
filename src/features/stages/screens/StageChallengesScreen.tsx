@@ -14,7 +14,7 @@ import { challengeLocked,nextChallengeId } from '../model/challenges';
 import { ChallengeCard } from '../components/ChallengeCard';
 import { StageResultSheet } from '@/features/results/components/StageResultSheet';
 import { tabArtwork } from '@/components/navigation/tabArtwork';
-import { storyRunCompleted } from '../model/stages';
+import { resetStoryRun, storyRunCompleted } from '../model/stages';
 const message=(e:unknown)=>e instanceof Error?e.message:'خطای ناشناخته';
 export function StageChallengesScreen({stageId}:{stageId:string}){
  const router=useRouter();const insets=useSafeAreaInsets();const params=useLocalSearchParams<{result?:string}>();const [childId,setChildId]=useState('');const [ready,setReady]=useState(false);const [resultOpen,setResultOpen]=useState(false);
@@ -35,7 +35,7 @@ export function StageChallengesScreen({stageId}:{stageId:string}){
   }
  },[params.result,complete,stageType,journeyId,childId,stageId]);
  const percentage=totalCount>0?Math.round(Math.min(100,completeCount/totalCount*100)):0;
- const journeyBack=()=>{if(journeyId)router.replace({pathname:'/journeys/[journeyId]',params:{journeyId}});else router.replace('/journeys');};
+ const journeyBack=()=>{if(stageType==='story'&&!complete&&journeyId)resetStoryRun(childId,journeyId);if(journeyId)router.replace({pathname:'/journeys/[journeyId]',params:{journeyId}});else router.replace('/journeys');};
  return <SafeAreaView edges={['top','bottom','left','right']} style={{flex:1,backgroundColor:'#FFFFFF'}}>
  <View style={{flex:1,backgroundColor:'#FFFFFF'}}>
  <ScrollView keyboardShouldPersistTaps="handled" style={{flex:1,backgroundColor:'#FFFFFF'}} contentContainerStyle={{width:'100%',maxWidth:880,alignSelf:'center',paddingHorizontal:16,gap:14,paddingTop:14,paddingBottom:160+insets.bottom,backgroundColor:'#FFFFFF'}}>
