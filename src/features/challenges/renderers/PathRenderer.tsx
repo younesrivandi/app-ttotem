@@ -6,7 +6,7 @@ import { AppButton } from '@/components/ui/AppButton';
 import { useAppTheme } from '@/theme/ThemeProvider';
 
 const MAX_POINTS = 4000;
-const MIN_DISTANCE_SQUARED = 2.25;
+const MIN_DISTANCE_SQUARED = 0.002 ** 2;
 type Props = {
  imageUrl?: string;
  strokes: readonly Stroke[];
@@ -32,6 +32,8 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, onDrawi
  const disabledRef = useRef(disabled);
  disabledRef.current = disabled;
  const lastPaint = useRef(0);
+ const startPoint = useRef<Point | null>(null);
+ const [canvasSize, setCanvasSize] = useState({ width: 1, height: 280 });
 
  const responder = useMemo(() => {
  const readPoint = (event: GestureResponderEvent): Point | null => {
@@ -40,11 +42,11 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, onDrawi
   const { width, height } = bounds.current;
   if (width <= 0 || height <= 0) return null;
   return {
-   x: Math.max(0, Math.min(width, locationX)),
-   y: Math.max(0, Math.min(height, locationY)),
+   x: Math.max(0, Math.min(1, locationX / width)),
+   y: Math.max(0, Math.min(1, locationY / height)),
   };
  };
- const reset = () => { active.current = []; setPreview([]); drawingChange.current?.(false); };
+ const reset = () => { active.current = []; startPoint.current = null; setPreview([]); drawingChange.current?.(false); };
 
  return PanResponder.create({
   onStartShouldSetPanResponder: () => !disabledRef.current,
@@ -53,14 +55,20 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, onDrawi
   onPanResponderGrant: event => {
    const point = readPoint(event);
    if (!point) return;
+   startPoint.current = point;
    active.current = [point];
    drawingChange.current?.(true);
    setPreview([point]);
   },
-  onPanResponderMove: event => {
+  onPanResponderMove: (_event, gesture) => {
    if (disabledRef.current || active.current.length >= MAX_POINTS) return;
-   const point = readPoint(event);
-   if (!point) return;
+   const start = startPoint.current;
+   const { width, height } = bounds.current;
+   if (!start || width <= 0 || height <= 0) return;
+   const point = {
+    x: Math.max(0, Math.min(1, start.x + gesture.dx / width)),
+    y: Math.max(0, Math.min(1, start.y + gesture.dy / height)),
+   };
    const last = active.current[active.current.length - 1];
    if (last && (point.x - last.x) ** 2 + (point.y - last.y) ** 2 < MIN_DISTANCE_SQUARED) return;
    active.current.push(point);
@@ -95,12 +103,13 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, onDrawi
     onLayout={event => {
      const { width, height } = event.nativeEvent.layout;
      bounds.current = { width, height };
+     setCanvasSize({ width, height });
     }} {...responder.panHandlers}>
     <Svg width="100%" height="100%" pointerEvents="none">
      {[...strokes.map(stroke => stroke.points), preview].map((points, index) =>
       points.length > 1
-       ? <Polyline key={index} points={points.map(point => `${point.x},${point.y}`).join(' ')}
-        fill="none" stroke={colors.primary} strokeWidth={4}
+       ? <Polyline key={index} points={points.map(point => `${point.x * canvasSize.width},${point.y * canvasSize.height}`).join(' ')}
+        fill="none" stroke="#4A90E2" strokeWidth={14}
         strokeLinecap="round" strokeLinejoin="round" />
        : null)}
     </Svg>
