@@ -12,10 +12,11 @@ type Props = {
  strokes: readonly Stroke[];
  onChange: (value: Stroke[]) => void;
  onStrokeEnd?: (value: Stroke[]) => void;
+ onDrawingChange?: (drawing: boolean) => void;
  disabled?: boolean;
 };
 
-export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, disabled = false }: Props) {
+export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, onDrawingChange, disabled = false }: Props) {
  const { colors } = useAppTheme();
  const active = useRef<Point[]>([]);
  const [preview, setPreview] = useState<Point[]>([]);
@@ -26,6 +27,8 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, disable
  change.current = onChange;
  const finish = useRef(onStrokeEnd);
  finish.current = onStrokeEnd;
+ const drawingChange = useRef(onDrawingChange);
+ drawingChange.current = onDrawingChange;
  const disabledRef = useRef(disabled);
  disabledRef.current = disabled;
  const lastPaint = useRef(0);
@@ -41,7 +44,7 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, disable
    y: Math.max(0, Math.min(height, locationY)),
   };
  };
- const reset = () => { active.current = []; setPreview([]); };
+ const reset = () => { active.current = []; setPreview([]); drawingChange.current?.(false); };
 
  return PanResponder.create({
   onStartShouldSetPanResponder: () => !disabledRef.current,
@@ -51,6 +54,7 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, disable
    const point = readPoint(event);
    if (!point) return;
    active.current = [point];
+   drawingChange.current?.(true);
    setPreview([point]);
   },
   onPanResponderMove: event => {
@@ -87,7 +91,7 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, disable
   }}>
    {imageUrl ? <Image pointerEvents="none" source={{ uri: imageUrl }} resizeMode="contain"
     style={{ width: '100%', height: '100%', position: 'absolute' }} /> : null}
-   <View style={{ flex: 1, touchAction: 'none' }}
+   <View touchAction="none" style={{ flex: 1 }}
     onLayout={event => {
      const { width, height } = event.nativeEvent.layout;
      bounds.current = { width, height };
