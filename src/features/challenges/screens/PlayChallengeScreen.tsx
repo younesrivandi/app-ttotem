@@ -26,14 +26,15 @@ type Detail=ChallengeSpec&{title?:string;prompt?:string;description?:string;inst
 const message=(error:unknown)=>error instanceof Error?error.message:'خطای نامشخص';
 function detailFromResponse(value:unknown):Detail{if(!value||typeof value!=='object')throw new Error('پاسخ چالش معتبر نیست');const obj=value as Record<string,unknown>;if(typeof obj.kind!=='string')throw new Error('نوع چالش در پاسخ سرور موجود نیست');if(obj.data!==undefined&&(typeof obj.data!=='object'||obj.data===null))throw new Error('داده چالش معتبر نیست');return obj as Detail;}
 export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challengeId:string}){
- const router=useRouter();const queryClient=useQueryClient();const inFlight=useRef(false);const latestState=useRef<EngineState|null>(null);const [ready,setReady]=useState(false);const [childId,setChildId]=useState('');const [state,setState]=useState<EngineState|null>(null);const [feedback,setFeedback]=useState<ServerFeedback|null>(null);const [error,setError]=useState('');
+ const router=useRouter();const queryClient=useQueryClient();const inFlight=useRef(false);const latestState=useRef<EngineState|null>(null);const [ready,setReady]=useState(false);const [childId,setChildId]=useState('');const [state,setState]=useState<EngineState|null>(null);const [feedback,setFeedback]=useState<ServerFeedback|null>(null);const [error,setError]=useState('');const [toast,setToast]=useState('');
  useEffect(()=>{let live=true;const sync=()=>{if(live){setChildId(currentSession().childId??'');setReady(true)}};void bootstrapSession().then(sync);const unsub=subscribeSession(sync);return()=>{live=false;unsub()};},[]);
  const enabled=ready&&!!childId&&!!currentSession().child?.accessToken;
  const challenge=useQuery({queryKey:['challenge-detail',childId,stageId,challengeId],queryFn:async()=>detailFromResponse(await api.challenge(stageId,challengeId)),enabled});
  const summary=useQuery({queryKey:queryKeys.challenges(childId,stageId),queryFn:async()=>challengesResponseSchema.parse(await api.challenges(stageId)),enabled});
  const spec=challenge.data;const kind=spec?classifyChallenge(spec):'unsupported';
- useEffect(()=>{inFlight.current=false;latestState.current=null;setState(null);setFeedback(null);setError('');},[stageId,challengeId]);
+ useEffect(()=>{inFlight.current=false;latestState.current=null;setState(null);setFeedback(null);setError('');setToast('');},[stageId,challengeId]);
  useEffect(()=>{if(spec){const initial=initialGameState(spec);latestState.current=initial;setState(initial);}},[spec,stageId,challengeId]);
+ useEffect(()=>{if(!toast)return;const id=setTimeout(()=>setToast(''),2800);return()=>clearTimeout(id);},[toast]);
  const update=(fn:(s:EngineState)=>EngineState)=>{const current=latestState.current;if(!current)return;const next=fn(current);latestState.current=next;setState(next);};
  const loading=!ready||(enabled&&(challenge.isPending||summary.isPending));
  const sending=state?.submitting??false;const solved=state?.solved??false;
@@ -48,7 +49,11 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
   try{
    const response=await submitAttempt(stageId,challengeId,payload);
    setFeedback(response);
-   update(current=>applyFeedback(current,response));
+   update(current=>{
+    const updated=applyFeedback(current,response);
+    return !response.isCorrect&&kind==='path'?{...updated,strokes:[]}:updated;
+   });
+   if(!response.isCorrect&&(kind==='path'||kind==='sorting'))setToast('پاسخ درست نبود، دوباره تلاش کن!');
    void (response.isCorrect?gameHaptics.correct():gameHaptics.incorrect());
    if(response.isCorrect){
     await Promise.all([
@@ -56,7 +61,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      queryClient.invalidateQueries({queryKey:['child',childId,'stages',stageId,'result']}),
      queryClient.invalidateQueries({queryKey:queryKeys.journeys(childId)}),
     ]);
-    if(kind==='sorting') await proceed(response.nextChallengeId);
+    if(kind==='sorting'||kind==='path') await proceed(response.nextChallengeId);
    }
   }catch(e){
    setError(message(e));
@@ -74,12 +79,20 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
   setFeedback(null);
   void submit(next);
  };
+ const finishPathAndCheck=(strokes:Stroke[])=>{
+  if(inFlight.current||kind!=='path')return;
+  const current=latestState.current;
+  if(!current||current.submitting||current.solved)return;
+  const next=setStrokes(current,strokes);
+  latestState.current=next;setState(next);setFeedback(null);
+  void submit(next);
+ };
  const data=spec?.data;
  const renderer=(()=>{if(!state||!spec)return null;switch(kind){
  case 'choice':return <ChoiceRenderer options={data?.options??[]} selected={state.selected} onSelect={i=>update(s=>toggleChoice(s,i,data?.options?.length??0,!!data?.allowMultiple))} disabled={sending||solved}/>;
  case 'sorting':return <SortingRenderer items={data?.items??[]} order={state.sortOrder} onMove={moveSortAndCheck} disabled={sending||solved}/>;
  case 'matching':return <MatchingRenderer sources={data?.collections?.[0]??[]} targets={data?.collections?.[1]??[]} matches={state.matches} onConnect={(i,j)=>update(s=>connectMatch(s,i,j,data?.collections?.[0]?.length??0,data?.collections?.[1]?.length??0))} disabled={sending||solved}/>;
- case 'path':return <PathRenderer imageUrl={data?.displayImageUrl} strokes={state.strokes} onChange={(strokes:Stroke[])=>update(s=>setStrokes(s,strokes))} disabled={sending||solved}/>;
+ case 'path':return <PathRenderer imageUrl={data?.displayImageUrl} strokes={state.strokes} onChange={(strokes:Stroke[])=>update(s=>setStrokes(s,strokes))} onStrokeEnd={finishPathAndCheck} disabled={sending||solved}/>;
  case 'video':case 'content':return <ContentRenderer text={data?.text??spec.description} imageUrl={data?.imageUrl} videoUrl={data?.videoUrl} audioUrl={data?.audioUrl} completedMedia={state.completedMedia} onMediaFinished={mediaKind=>update(s=>s.completedMedia.includes(mediaKind)?s:{...s,completedMedia:[...s.completedMedia,mediaKind]})}/>;
  case 'voice':return <AppCard><VoiceRecorder key={`${stageId}:${challengeId}`} disabled={sending||solved} referenceAudioUrl={data?.referenceAudioUrl??spec.voiceUrl??data?.audioUrl} onReady={value=>update(s=>({...s,voiceRecording:value}))} onRecordingChange={value=>update(s=>({...s,recording:value}))}/></AppCard>;
  default:return <ErrorState title="نوع چالش پشتیبانی نمی‌شود" description={`نوع دریافتی: ${spec.kind}`}/>;
@@ -131,12 +144,17 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      loading?<LoadingState title="دریافت بازی…"/>:
      challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:
      spec&&state?<>{renderer}
-      {feedback&&!feedback.isCorrect&&kind!=='sorting'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
-      {feedback?.isCorrect&&kind!=='sorting'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
+      {feedback&&!feedback.isCorrect&&kind!=='sorting'&&kind!=='path'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
+      {feedback?.isCorrect&&kind!=='sorting'&&kind!=='path'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
       {error?<AppText tone="error">{error}</AppText>:null}
      </>:null}
    </ScrollView>
-   {spec&&state&&enabled&&kind!=='sorting'&&<View style={{paddingVertical:12,borderTopWidth:1,borderTopColor:'#EDE6F7'}}>
+   {!!toast&&<View pointerEvents="none" accessibilityRole="alert" style={{
+    position:'absolute',left:20,right:20,bottom:28,zIndex:50,elevation:20,
+    backgroundColor:'#38264F',borderRadius:16,paddingHorizontal:18,paddingVertical:14,
+    shadowColor:'#241632',shadowOpacity:0.3,shadowRadius:12,
+   }}><AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:14}}>{toast}</AppText></View>}
+   {spec&&state&&enabled&&kind!=='sorting'&&kind!=='path'&&<View style={{paddingVertical:12,borderTopWidth:1,borderTopColor:'#EDE6F7'}}>
      {feedback?.isCorrect?
        <Pressable accessibilityRole="button" onPress={()=>{void proceed(feedback.nextChallengeId).catch(e=>setError(message(e)));}}
          style={{height:52,borderRadius:15,backgroundColor:'#764EB2',justifyContent:'center',alignItems:'center'}}>
