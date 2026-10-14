@@ -74,7 +74,7 @@ export function PuzzleRenderer({ pieces, boardImageUrl, placements, disabled, on
   <View ref={boardRef} collapsable={false} onLayout={event => setBoardSize({
    width: event.nativeEvent.layout.width, height: event.nativeEvent.layout.height,
   })} style={{
-   width: '100%', aspectRatio: boardAspectRatio, maxHeight: 620,
+   width: '100%', aspectRatio: boardAspectRatio,
    alignSelf: 'center', backgroundColor: '#FFFFFF', borderRadius: 24,
    borderWidth: 1, borderColor: '#E7DDF3', overflow: 'hidden',
   }}>
