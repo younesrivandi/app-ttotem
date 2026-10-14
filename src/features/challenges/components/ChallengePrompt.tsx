@@ -40,13 +40,7 @@ export function ChallengePrompt({title,prompt,titleImageUrl,titleAudioUrl,imageU
    <Image source={{uri:picture}} resizeMode="contain" style={{width:'100%',height:210}} accessibilityLabel="تصویر سؤال"/>
   </View>}
   {!!video && <VideoContent key={video} uri={video} completed={false} onFinish={()=>{}}/>}
-  {!!audio && <View style={{padding:12,borderRadius:18,backgroundColor:'#F0E9FC',borderWidth:1,borderColor:'#E1D4F3'}}>
-   <AppText weight="700" style={{color:'#5B3993',textAlign:'right',fontSize:12,marginBottom:8}}>🔊 گوش کن</AppText>
-   <AudioContent key={audio} uri={audio} completed={false} onFinish={()=>{}}/>
-  </View>}
-  {!!instructionAudio && <View style={{padding:10,borderRadius:16,backgroundColor:'#F4F0FA'}}>
-   <AppText weight="700" style={{textAlign:'right',fontSize:12,color:'#7051A4'}}>🔊 راهنمای صوتی چالش</AppText>
-   <AudioContent key={instructionAudio} uri={instructionAudio} completed={false} onFinish={()=>{}}/>
-  </View>}
+  {!!audio && <AudioContent key={audio} uri={audio} completed={false} onFinish={()=>{}}/>}
+  {!!instructionAudio && <AudioContent key={instructionAudio} uri={instructionAudio} completed={false} onFinish={()=>{}}/>}
  </View>;
 }
