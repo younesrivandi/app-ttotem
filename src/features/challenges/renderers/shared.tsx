@@ -13,7 +13,7 @@ function AudioOption({uri}:{uri:string}){
  const status=useAudioPlayerStatus(player);
  return <Pressable accessibilityRole="button" accessibilityLabel={status.playing?'مکث صدای گزینه':'پخش صدای گزینه'}
   disabled={!status.isLoaded}
-  onPress={event=>{event.stopPropagation();if(status.playing)player.pause();else {if(status.didJustFinish)player.seekTo(0);player.play();}}}
+  onPress={event=>{event.stopPropagation();void (async()=>{try{if(status.playing){player.pause();return;}if(status.didJustFinish||(status.duration>0&&status.currentTime>=status.duration-0.15))await player.seekTo(0);player.play();}catch{}})();}}
   style={{paddingHorizontal:10,paddingVertical:8,borderRadius:12,backgroundColor:'#F0E6FF',
    borderWidth:1,borderColor:'#DCC7F7',opacity:status.isLoaded?1:0.5}}>
   <AppText weight="700" style={{color:'#6842A2',fontSize:12}}>{status.playing?'⏸ مکث':'🔊 پخش صدا'}</AppText>
