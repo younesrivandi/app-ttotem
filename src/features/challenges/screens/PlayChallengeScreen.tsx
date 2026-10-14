@@ -165,7 +165,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  case 'sorting':return <SortingRenderer items={data?.items??[]} order={state.sortOrder} onMove={moveSortAndCheck} disabled={sending||solved}/>;
  case 'matching':return <MatchingRenderer sources={data?.collections?.[0]??[]} targets={data?.collections?.[1]??[]} matches={state.matches} onConnect={(i,j)=>update(s=>connectMatch(s,i,j,data?.collections?.[0]?.length??0,data?.collections?.[1]?.length??0))} disabled={sending||solved}/>;
  case 'path':return <PathRenderer imageUrl={data?.displayImageUrl} strokes={state.strokes} onChange={(strokes:Stroke[])=>update(s=>setStrokes(s,strokes))} onStrokeEnd={finishPathAndCheck} onDrawingChange={setDrawing} disabled={sending||solved}/>;
- case 'video':case 'content':return <ContentRenderer text={data?.text??spec.description} imageUrl={data?.imageUrl} videoUrl={data?.videoUrl} audioUrl={data?.audioUrl} completedMedia={state.completedMedia} onMediaFinished={mediaKind=>update(s=>s.completedMedia.includes(mediaKind)?s:{...s,completedMedia:[...s.completedMedia,mediaKind]})}/>;
+ case 'video':case 'content':return <ContentRenderer text={data?.text} imageUrl={data?.imageUrl} videoUrl={data?.videoUrl} audioUrl={data?.audioUrl} completedMedia={state.completedMedia} onMediaFinished={mediaKind=>update(s=>s.completedMedia.includes(mediaKind)?s:{...s,completedMedia:[...s.completedMedia,mediaKind]})}/>;
  case 'voice':return <VoiceRecorder key={`${stageId}:${challengeId}`} expectedText={data?.expectedText} disabled={sending||solved} onRecorded={submitRecordedVoice} onRecordingChange={value=>update(s=>({...s,recording:value}))}/>;
  default:return <ErrorState title="نوع چالش پشتیبانی نمی‌شود" description={`نوع دریافتی: ${spec.kind}`}/>;
  }})();
@@ -202,7 +202,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
     </View>
    </View>
   </View>
-  {spec && state && <ChallengePrompt
+  {spec && state && kind!=='content' && kind!=='video' && <ChallengePrompt
    title={data?.title??spec.title}
    titleMediaType={data?.titleMediaType}
    titleMediaUrl={data?.titleMediaUrl}
@@ -215,7 +215,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
    audioUrl={undefined}
   />}
    <ScrollView keyboardShouldPersistTaps="handled" scrollEnabled={!drawing} style={{flex:1}}
-     contentContainerStyle={{gap:spacing.md,paddingTop:12,paddingBottom:24}}
+     contentContainerStyle={{gap:spacing.md,paddingTop:kind==='content'||kind==='video'?0:12,paddingBottom:kind==='content'||kind==='video'?8:24}}
      nestedScrollEnabled>
      {!ready?<LoadingState title="بررسی نشست کودک…"/>:
      !enabled?<ErrorState title="ابتدا پروفایل کودک را انتخاب کنید" onRetry={()=>router.replace('/children')}/>:
@@ -223,7 +223,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:
      spec&&state?<>{renderer}
       {feedback&&!feedback.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'&&kind!=='choice'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
-      {feedback?.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
+      {feedback?.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='content'&&kind!=='video'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
       {error?<AppText tone="error">{error}</AppText>:null}
      </>:null}
    </ScrollView>
@@ -241,7 +241,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
        <Pressable accessibilityRole="button" disabled={sending||!canSubmit(spec,state)||solved}
          onPress={()=>{void submit()}}
          style={{height:52,borderRadius:15,backgroundColor:sending||!canSubmit(spec,state)||solved?'#B6A7CE':'#764EB2',justifyContent:'center',alignItems:'center'}}>
-         <AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:23}}>→</AppText>
+         <AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:23}}>←</AppText>
        </Pressable>}
    </View>}
  </View>
