@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Image, PanResponder, View, type View as NativeView } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import type { PuzzlePiece, PuzzlePlacement } from '../engine';
@@ -49,6 +49,16 @@ function DraggablePiece({ piece, disabled, onDrop }: {
 export function PuzzleRenderer({ pieces, boardImageUrl, placements, disabled, onDrop }: Props) {
  const boardRef = useRef<NativeView>(null);
  const [boardSize, setBoardSize] = useState({ width: 0, height: 0 });
+ const [boardAspectRatio, setBoardAspectRatio] = useState(1);
+ useEffect(() => {
+  setBoardAspectRatio(1);
+  if (!boardImageUrl) return;
+  let active = true;
+  Image.getSize(boardImageUrl, (width, height) => {
+   if (active && width > 0 && height > 0) setBoardAspectRatio(width / height);
+  }, () => {});
+  return () => { active = false; };
+ }, [boardImageUrl]);
  const placed = Object.values(placements);
  const available = pieces.filter(piece => !placements[piece.id]);
  const sendDrop = (pieceId: string, pageX: number, pageY: number) => {
@@ -64,18 +74,21 @@ export function PuzzleRenderer({ pieces, boardImageUrl, placements, disabled, on
   <View ref={boardRef} collapsable={false} onLayout={event => setBoardSize({
    width: event.nativeEvent.layout.width, height: event.nativeEvent.layout.height,
   })} style={{
-   width: '100%', aspectRatio: 1, backgroundColor: '#FFFFFF', borderRadius: 18,
+   width: '100%', aspectRatio: boardAspectRatio, maxHeight: 620,
+   alignSelf: 'center', backgroundColor: '#FFFFFF', borderRadius: 24,
    borderWidth: 1, borderColor: '#E7DDF3', overflow: 'hidden',
   }}>
-   {!!boardImageUrl && <Image source={{ uri: boardImageUrl }} resizeMode="stretch"
+   {!!boardImageUrl && <Image source={{ uri: boardImageUrl }} resizeMode="contain"
     style={{ width: '100%', height: '100%' }} />}
    {placed.map(placement => {
     const piece = pieces.find(item => item.id === placement.pieceId);
     if (!piece) return null;
-    return <Image key={placement.pieceId} source={{ uri: piece.imageUrl }} resizeMode="stretch"
-     style={{ position: 'absolute', left: placement.x * boardSize.width,
-      top: placement.y * boardSize.height, width: placement.width * boardSize.width,
-      height: placement.height * boardSize.height }} />;
+    const width = placement.width * boardSize.width;
+    const height = placement.height * boardSize.height;
+    return <Image key={placement.pieceId} source={{ uri: piece.imageUrl }} resizeMode="contain"
+     style={{ position: 'absolute', left: placement.x * boardSize.width - width / 2,
+      top: placement.y * boardSize.height - height / 2,
+      width, height }} />;
    })}
   </View>
   <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
