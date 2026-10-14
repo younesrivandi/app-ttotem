@@ -14,6 +14,7 @@ import {challengesResponseSchema} from '@/features/stages/model/challenges';
 import {applyFeedback,buildAttempt,canSubmit,classifyChallenge,connectMatch,initialGameState,moveSorting,resolveNextStep,setStrokes,toggleChoice} from '../engine';
 import type {ChallengeSpec,EngineState,ServerFeedback,Stroke,PuzzlePlacement} from '../engine';
 import {PuzzleRenderer} from '../renderers/PuzzleRenderer';
+import {ChallengePrompt} from '../components/ChallengePrompt';
 import {submitAttempt} from '../api/attemptsApi';
 import {ChoiceRenderer} from '../renderers/ChoiceRenderer';
 import {SortingRenderer} from '../renderers/SortingRenderer';
@@ -23,7 +24,8 @@ import {ContentRenderer} from '../renderers/ContentRenderer';
 import {VoiceRecorder} from '../renderers/VoiceRecorder';
 import {gameHaptics} from '../services/feedback';
 import {spacing} from '@/theme/tokens';
-type Detail=ChallengeSpec&{title?:string;prompt?:string;description?:string;instruction?:string;audioUrl?:string;voiceUrl?:string;data?:ChallengeSpec['data']&{prompt?:string;description?:string;instruction?:string;displayImageUrl?:string;imageUrl?:string;text?:string;referenceAudioUrl?:string}};
+type MediaValue=string|{text?:string;title?:string;imageUrl?:string;audioUrl?:string};
+type Detail=ChallengeSpec&{title?:MediaValue;prompt?:MediaValue;description?:string;instruction?:string;audioUrl?:string;titleAudioUrl?:string;titleImageUrl?:string;imageUrl?:string;voiceUrl?:string;data?:ChallengeSpec['data']&{title?:MediaValue;prompt?:MediaValue;description?:string;instruction?:string;titleAudioUrl?:string;titleImageUrl?:string;displayImageUrl?:string;imageUrl?:string;text?:string;referenceAudioUrl?:string}};
 const message=(error:unknown)=>error instanceof Error?error.message:'خطای نامشخص';
 function detailFromResponse(value:unknown):Detail{if(!value||typeof value!=='object')throw new Error('پاسخ چالش معتبر نیست');const obj=value as Record<string,unknown>;if(typeof obj.kind!=='string')throw new Error('نوع چالش در پاسخ سرور موجود نیست');if(obj.data!==undefined&&(typeof obj.data!=='object'||obj.data===null))throw new Error('داده چالش معتبر نیست');return obj as Detail;}
 export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challengeId:string}){
@@ -179,12 +181,14 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
     </View>
    </View>
   </View>
-  {spec && state && <View style={{paddingVertical:12,paddingHorizontal:4,gap:5}}>
-    <AppText variant="title" weight="700" style={{textAlign:'right'}}>{spec.title??'بازی آموزشی'}</AppText>
-    {!!(data?.prompt??spec.prompt??data?.description??spec.instruction) && <AppText tone="muted" style={{textAlign:'right'}}>
-      {data?.prompt??spec.prompt??data?.description??spec.instruction}
-    </AppText>}
-   </View>}
+  {spec && state && <ChallengePrompt
+   title={data?.title??spec.title}
+   prompt={data?.prompt??spec.prompt??data?.description??spec.instruction}
+   titleImageUrl={data?.titleImageUrl??spec.titleImageUrl}
+   titleAudioUrl={data?.titleAudioUrl??spec.titleAudioUrl}
+   imageUrl={spec.imageUrl}
+   audioUrl={kind==='voice'?undefined:spec.audioUrl}
+  />}
    <ScrollView keyboardShouldPersistTaps="handled" scrollEnabled={!drawing} style={{flex:1}}
      contentContainerStyle={{gap:spacing.md,paddingTop:12,paddingBottom:24}}
      nestedScrollEnabled>
