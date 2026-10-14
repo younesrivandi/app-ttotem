@@ -30,6 +30,7 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, disable
  disabledRef.current = disabled;
  const lastPaint = useRef(0);
 
+ const responder = useMemo(() => {
  const readPoint = (event: GestureResponderEvent): Point | null => {
   const { locationX, locationY } = event.nativeEvent;
   if (!Number.isFinite(locationX) || !Number.isFinite(locationY)) return null;
@@ -42,7 +43,7 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, disable
  };
  const reset = () => { active.current = []; setPreview([]); };
 
- const responder = useMemo(() => PanResponder.create({
+ return PanResponder.create({
   onStartShouldSetPanResponder: () => !disabledRef.current,
   onMoveShouldSetPanResponder: () => !disabledRef.current,
   onPanResponderTerminationRequest: () => false,
@@ -76,7 +77,8 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, disable
    reset();
   },
   onPanResponderTerminate: reset,
- }), []);
+ });
+ }, []);
 
  return <View style={{ gap: 12 }}>
   <View style={{
