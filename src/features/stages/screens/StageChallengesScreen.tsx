@@ -14,6 +14,7 @@ import { challengeLocked,nextChallengeId } from '../model/challenges';
 import { ChallengeCard } from '../components/ChallengeCard';
 import { StageResultSheet } from '@/features/results/components/StageResultSheet';
 import { tabArtwork } from '@/components/navigation/tabArtwork';
+import { storyRunCompleted } from '../model/stages';
 const message=(e:unknown)=>e instanceof Error?e.message:'خطای ناشناخته';
 export function StageChallengesScreen({stageId}:{stageId:string}){
  const router=useRouter();const insets=useSafeAreaInsets();const params=useLocalSearchParams<{result?:string}>();const [childId,setChildId]=useState('');const [ready,setReady]=useState(false);const [resultOpen,setResultOpen]=useState(false);
@@ -27,6 +28,12 @@ export function StageChallengesScreen({stageId}:{stageId:string}){
  const challenges=[...(query.data?.challenges??[])].sort((a,b)=>(a.order??0)-(b.order??0));
  const next=nextChallengeId(challenges,query.data?.nextChallengeId);
  const completeCount=query.data?.completedCount??0;const totalCount=query.data?.totalCount??0;const complete=totalCount>0&&completeCount>=totalCount;
+ const stageType=stagesQuery.data?.stages.find(item=>item.stageId===stageId)?.type?.toLowerCase();
+ useEffect(()=>{
+  if(params.result==='1'&&complete&&stageType==='story'&&journeyId&&childId){
+   storyRunCompleted(childId,journeyId,stageId);
+  }
+ },[params.result,complete,stageType,journeyId,childId,stageId]);
  const percentage=totalCount>0?Math.round(Math.min(100,completeCount/totalCount*100)):0;
  const journeyBack=()=>{if(journeyId)router.replace({pathname:'/journeys/[journeyId]',params:{journeyId}});else router.replace('/journeys');};
  return <SafeAreaView edges={['top','bottom','left','right']} style={{flex:1,backgroundColor:'#FFFFFF'}}>
@@ -88,7 +95,7 @@ export function StageChallengesScreen({stageId}:{stageId:string}){
    </>}
   {authorized&&complete&&<StageResultSheet stageId={stageId} childId={childId}
    open={resultOpen} onClose={()=>setResultOpen(false)}
-   onContinue={()=>{setResultOpen(false);router.replace('/journeys');}}
+   onContinue={()=>{setResultOpen(false);router.replace(stageType==='story'&&journeyId?{pathname:'/journeys/[journeyId]',params:{journeyId}}:'/journeys');}}
    onReplay={()=>{setResultOpen(false);router.replace({pathname:'/stages/[stageId]',params:{stageId}});}}/>}
  </ScrollView>
  <View style={{
