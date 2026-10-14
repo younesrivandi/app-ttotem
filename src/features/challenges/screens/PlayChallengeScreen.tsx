@@ -56,7 +56,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
     const updated=applyFeedback(current,response);
     return !response.isCorrect&&kind==='path'?{...updated,strokes:[]}:updated;
    });
-   if(!response.isCorrect&&(kind==='path'||kind==='sorting'))setToast('پاسخ درست نبود، دوباره تلاش کن!');
+   if(!response.isCorrect&&(kind==='path'||kind==='sorting'||kind==='voice'))setToast('پاسخ درست نبود، دوباره تلاش کن!');
    void (response.isCorrect?gameHaptics.correct():gameHaptics.incorrect());
    if(response.isCorrect){
     await Promise.all([
@@ -64,7 +64,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      queryClient.invalidateQueries({queryKey:['child',childId,'stages',stageId,'result']}),
      queryClient.invalidateQueries({queryKey:queryKeys.journeys(childId)}),
     ]);
-    if(kind==='sorting'||kind==='path') await proceed(response.nextChallengeId);
+    if(kind==='sorting'||kind==='path'||kind==='voice') await proceed(response.nextChallengeId);
    }
   }catch(e){
    setError(message(e));
@@ -137,6 +137,14 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
    update(value=>({...value,submitting:false}));
   }finally{inFlight.current=false;}
  };
+ const submitRecordedVoice=(dataUrl:string)=>{
+  if(inFlight.current||kind!=='voice')return;
+  const current=latestState.current;
+  if(!current||current.solved)return;
+  const next={...current,voiceRecording:dataUrl,recording:false};
+  latestState.current=next;setState(next);setFeedback(null);
+  void submit(next);
+ };
  const data=spec?.data;
  const renderer=(()=>{if(!state||!spec)return null;switch(kind){
  case 'puzzle':return <PuzzleRenderer pieces={data?.pieces??[]} boardImageUrl={data?.boardImageUrl??data?.maskImageUrl} placements={placements} disabled={sending||solved} onDrop={placePuzzlePiece}/>;
@@ -145,7 +153,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  case 'matching':return <MatchingRenderer sources={data?.collections?.[0]??[]} targets={data?.collections?.[1]??[]} matches={state.matches} onConnect={(i,j)=>update(s=>connectMatch(s,i,j,data?.collections?.[0]?.length??0,data?.collections?.[1]?.length??0))} disabled={sending||solved}/>;
  case 'path':return <PathRenderer imageUrl={data?.displayImageUrl} strokes={state.strokes} onChange={(strokes:Stroke[])=>update(s=>setStrokes(s,strokes))} onStrokeEnd={finishPathAndCheck} onDrawingChange={setDrawing} disabled={sending||solved}/>;
  case 'video':case 'content':return <ContentRenderer text={data?.text??spec.description} imageUrl={data?.imageUrl} videoUrl={data?.videoUrl} audioUrl={data?.audioUrl} completedMedia={state.completedMedia} onMediaFinished={mediaKind=>update(s=>s.completedMedia.includes(mediaKind)?s:{...s,completedMedia:[...s.completedMedia,mediaKind]})}/>;
- case 'voice':return <AppCard><VoiceRecorder key={`${stageId}:${challengeId}`} disabled={sending||solved} referenceAudioUrl={data?.referenceAudioUrl??spec.voiceUrl??data?.audioUrl} onReady={value=>update(s=>({...s,voiceRecording:value}))} onRecordingChange={value=>update(s=>({...s,recording:value}))}/></AppCard>;
+ case 'voice':return <VoiceRecorder key={`${stageId}:${challengeId}`} disabled={sending||solved} onRecorded={submitRecordedVoice} onRecordingChange={value=>update(s=>({...s,recording:value}))}/>;
  default:return <ErrorState title="نوع چالش پشتیبانی نمی‌شود" description={`نوع دریافتی: ${spec.kind}`}/>;
  }})();
  const orderedChallenges=[...(summary.data?.challenges??[])].sort((a,b)=>(a.order??0)-(b.order??0));
@@ -201,7 +209,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      loading?<LoadingState title="دریافت بازی…"/>:
      challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:
      spec&&state?<>{renderer}
-      {feedback&&!feedback.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
+      {feedback&&!feedback.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
       {feedback?.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
       {error?<AppText tone="error">{error}</AppText>:null}
      </>:null}
@@ -211,7 +219,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
     backgroundColor:'#38264F',borderRadius:16,paddingHorizontal:18,paddingVertical:14,
     shadowColor:'#241632',shadowOpacity:0.3,shadowRadius:12,
    }}><AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:14}}>{toast}</AppText></View>}
-   {spec&&state&&enabled&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&<View style={{paddingVertical:12,borderTopWidth:1,borderTopColor:'#EDE6F7'}}>
+   {spec&&state&&enabled&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'&&<View style={{paddingVertical:12,borderTopWidth:1,borderTopColor:'#EDE6F7'}}>
      {feedback?.isCorrect?
        <Pressable accessibilityRole="button" onPress={()=>{void proceed(feedback.nextChallengeId).catch(e=>setError(message(e)));}}
          style={{height:52,borderRadius:15,backgroundColor:'#764EB2',justifyContent:'center',alignItems:'center'}}>
