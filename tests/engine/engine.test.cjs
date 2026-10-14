@@ -1,7 +1,7 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');
 const {classifyChallenge,initialGameState,shuffledIndexes,toggleChoice,moveSorting,connectMatch,setStrokes,canSubmit,buildAttempt,applyFeedback,resolveNextStep}=require('../../.stage11-test-build/gameEngine.js');
 const choice={kind:'Choice',data:{options:['a','b','c'],allowMultiple:true}};
-test('recognition and precedence',()=>{assert.equal(classifyChallenge({kind:'choice',data:{videoUrl:'a'}}),'video');assert.equal(classifyChallenge({kind:'peer'}),'matching');assert.equal(classifyChallenge({kind:'unknown'}),'unsupported');});
+test('recognition and precedence',()=>{assert.equal(classifyChallenge({kind:'choice',data:{videoUrl:'a'}}),'video');assert.equal(classifyChallenge({kind:'peer'}),'matching');assert.equal(classifyChallenge({kind:'Puzzle'}),'puzzle');assert.equal(classifyChallenge({kind:'unknown'}),'unsupported');});
 test('sorting never starts solved',()=>{assert.deepEqual(shuffledIndexes(3,()=>0.99),[1,0,2]);const s=initialGameState({kind:'sort',data:{items:[1,2,3]}},1,()=>0.99);assert.notDeepEqual(s.sortOrder,[0,1,2]);assert.deepEqual(moveSorting(s,0,2).sortOrder,[0,2,1]);});
 test('choice single and multiple',()=>{let s=initialGameState(choice,100);s=toggleChoice(s,2,3,true);s=toggleChoice(s,0,3,true);assert.deepEqual(buildAttempt(choice,s,350).answer,[0,2]);assert.deepEqual(toggleChoice(s,1,3,false).selected,[1]);assert.equal(toggleChoice(s,99,3,true),s);});
 test('matching unique source and destination',()=>{let s=initialGameState({kind:'matching'},100);s=connectMatch(s,0,0,2,2);s=connectMatch(s,1,0,2,2);assert.deepEqual(s.matches,[{sourceIndex:1,targetIndex:0}]);assert.equal(canSubmit({kind:'matching',data:{collections:[[1,2],[3,4]]}},s),false);});
