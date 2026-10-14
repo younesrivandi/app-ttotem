@@ -2,10 +2,12 @@
 export type Point = Readonly<{x:number;y:number}>;
 export type Stroke = Readonly<{points:readonly Point[]}>;
 export type Match = Readonly<{sourceIndex:number;targetIndex:number}>;
-export type GameKind = 'choice'|'sorting'|'matching'|'path'|'voice'|'content'|'video'|'unsupported';
+export type GameKind = 'puzzle'|'choice'|'sorting'|'matching'|'path'|'voice'|'content'|'video'|'unsupported';
+export type PuzzlePiece = Readonly<{id:string;imageUrl:string}>;
+export type PuzzlePlacement = Readonly<{pieceId:string;x:number;y:number;width:number;height:number}>;
 export type ChallengeSpec = Readonly<{
   kind:string;
-  data?:Readonly<{allowMultiple?:boolean;options?:readonly unknown[];items?:readonly unknown[];
+  data?:Readonly<{pieces?:readonly PuzzlePiece[];boardImageUrl?:string;maskImageUrl?:string;allowMultiple?:boolean;options?:readonly unknown[];items?:readonly unknown[];
     collections?:readonly (readonly unknown[])[];videoUrl?:string;audioUrl?:string;requireMediaCompletion?:boolean}>;
 }>;
 export type EngineState = Readonly<{
