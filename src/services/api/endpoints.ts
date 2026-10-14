@@ -17,6 +17,9 @@ export const api = {
   stages: (journeyId:string) => httpRequest<unknown>(`/api/v1/child/journeys/${segment(journeyId)}/stages`),
   challenges: (stageId:string) => httpRequest<unknown>(`/api/v1/child/stages/${segment(stageId)}/challenges`),
   challenge: (stageId:string, challengeId:string) => httpRequest<unknown>(`/api/v1/child/stages/${segment(stageId)}/challenges/${segment(challengeId)}`),
+  activity: (stageId:string,challengeId:string,actionType:string,payload:unknown,ms:number) => httpRequest<unknown>(
+    `/api/v1/child/stages/${segment(stageId)}/challenges/${segment(challengeId)}/activities`,
+    {method:'POST',body:{actionType,payload,timeSpentMilliseconds:Math.max(0,Math.min(ms,3600000))}}),
   attempt: (stageId:string,challengeId:string,answer:unknown,ms:number,mistakes=0) => httpRequest<unknown>(
     `/api/v1/child/stages/${segment(stageId)}/challenges/${segment(challengeId)}/attempts`,
     {method:'POST',body:{answer,timeSpentMilliseconds:Math.max(0,Math.min(ms,3600000)),mistakeCount:Math.max(0,Math.min(mistakes,100))}}),
