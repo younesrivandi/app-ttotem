@@ -89,9 +89,9 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, onDrawi
    height: 280, borderColor: colors.border, borderWidth: 1, borderRadius: 12,
    overflow: 'hidden', backgroundColor: colors.surface,
   }}>
-   {imageUrl ? <Image pointerEvents="none" source={{ uri: imageUrl }} resizeMode="contain"
+   {imageUrl ? <Image source={{ uri: imageUrl }} resizeMode="contain"
     style={{ width: '100%', height: '100%', position: 'absolute' }} /> : null}
-   <View touchAction="none" style={{ flex: 1 }}
+   <View style={{ flex: 1 }}
     onLayout={event => {
      const { width, height } = event.nativeEvent.layout;
      bounds.current = { width, height };
