@@ -25,7 +25,7 @@ import {VoiceRecorder} from '../renderers/VoiceRecorder';
 import {gameHaptics} from '../services/feedback';
 import {spacing} from '@/theme/tokens';
 type MediaValue=string|{text?:string;title?:string;imageUrl?:string;audioUrl?:string};
-type Detail=ChallengeSpec&{title?:MediaValue;prompt?:MediaValue;description?:string;instruction?:string;audioUrl?:string;titleAudioUrl?:string;titleImageUrl?:string;imageUrl?:string;voiceUrl?:string;data?:ChallengeSpec['data']&{titleMediaType?:string;titleMediaUrl?:string;showTextTitle?:boolean;voiceUrl?:string;title?:MediaValue;prompt?:MediaValue;description?:string;instruction?:string;titleAudioUrl?:string;titleImageUrl?:string;displayImageUrl?:string;imageUrl?:string;text?:string;referenceAudioUrl?:string}};
+type Detail=ChallengeSpec&{title?:MediaValue;prompt?:MediaValue;description?:string;instruction?:string;audioUrl?:string;titleAudioUrl?:string;titleImageUrl?:string;imageUrl?:string;voiceUrl?:string;data?:ChallengeSpec['data']&{titleMediaType?:string;titleMediaUrl?:string;showTextTitle?:boolean;voiceUrl?:string;title?:MediaValue;prompt?:MediaValue;description?:string;instruction?:string;titleAudioUrl?:string;titleImageUrl?:string;displayImageUrl?:string;imageUrl?:string;text?:string;referenceAudioUrl?:string;expectedText?:string}};
 const message=(error:unknown)=>error instanceof Error?error.message:'خطای نامشخص';
 function detailFromResponse(value:unknown):Detail{if(!value||typeof value!=='object')throw new Error('پاسخ چالش معتبر نیست');const obj=value as Record<string,unknown>;if(typeof obj.kind!=='string')throw new Error('نوع چالش در پاسخ سرور موجود نیست');if(obj.data!==undefined&&(typeof obj.data!=='object'||obj.data===null))throw new Error('داده چالش معتبر نیست');return obj as Detail;}
 export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challengeId:string}){
@@ -153,7 +153,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  case 'matching':return <MatchingRenderer sources={data?.collections?.[0]??[]} targets={data?.collections?.[1]??[]} matches={state.matches} onConnect={(i,j)=>update(s=>connectMatch(s,i,j,data?.collections?.[0]?.length??0,data?.collections?.[1]?.length??0))} disabled={sending||solved}/>;
  case 'path':return <PathRenderer imageUrl={data?.displayImageUrl} strokes={state.strokes} onChange={(strokes:Stroke[])=>update(s=>setStrokes(s,strokes))} onStrokeEnd={finishPathAndCheck} onDrawingChange={setDrawing} disabled={sending||solved}/>;
  case 'video':case 'content':return <ContentRenderer text={data?.text??spec.description} imageUrl={data?.imageUrl} videoUrl={data?.videoUrl} audioUrl={data?.audioUrl} completedMedia={state.completedMedia} onMediaFinished={mediaKind=>update(s=>s.completedMedia.includes(mediaKind)?s:{...s,completedMedia:[...s.completedMedia,mediaKind]})}/>;
- case 'voice':return <VoiceRecorder key={`${stageId}:${challengeId}`} disabled={sending||solved} onRecorded={submitRecordedVoice} onRecordingChange={value=>update(s=>({...s,recording:value}))}/>;
+ case 'voice':return <VoiceRecorder key={`${stageId}:${challengeId}`} expectedText={data?.expectedText} disabled={sending||solved} onRecorded={submitRecordedVoice} onRecordingChange={value=>update(s=>({...s,recording:value}))}/>;
  default:return <ErrorState title="نوع چالش پشتیبانی نمی‌شود" description={`نوع دریافتی: ${spec.kind}`}/>;
  }})();
  const orderedChallenges=[...(summary.data?.challenges??[])].sort((a,b)=>(a.order??0)-(b.order??0));
