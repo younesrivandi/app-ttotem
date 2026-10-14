@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Image, PanResponder, Pressable, View, type View as NativeView } from 'react-native';
+import { Animated, Image, PanResponder, View, type View as NativeView } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import type { PuzzlePiece, PuzzlePlacement } from '../engine';
 
@@ -16,6 +16,7 @@ function DraggablePiece({ piece, disabled, onDrop }: {
  onDrop: (id: string, x: number, y: number) => void;
 }) {
  const [dragging, setDragging] = useState(false);
+ const offset = useRef(new Animated.ValueXY({x:0,y:0})).current;
  const disabledRef = useRef(disabled);
  disabledRef.current = disabled;
  const dropRef = useRef(onDrop);
@@ -24,21 +25,25 @@ function DraggablePiece({ piece, disabled, onDrop }: {
   onStartShouldSetPanResponder: () => !disabledRef.current,
   onMoveShouldSetPanResponder: () => !disabledRef.current,
   onPanResponderTerminationRequest: () => false,
-  onPanResponderGrant: () => setDragging(true),
+  onPanResponderGrant: () => {offset.setValue({x:0,y:0});setDragging(true);},
+  onPanResponderMove: (_event, gesture) => offset.setValue({x:gesture.dx,y:gesture.dy}),
   onPanResponderRelease: (_event, gesture) => {
    setDragging(false);
+   offset.setValue({x:0,y:0});
    if (!disabledRef.current) dropRef.current(piece.id, gesture.moveX, gesture.moveY);
   },
-  onPanResponderTerminate: () => setDragging(false),
+  onPanResponderTerminate: () => {setDragging(false);offset.setValue({x:0,y:0});},
  }), [piece.id]);
- return <View {...responder.panHandlers} style={{
+ return <Animated.View {...responder.panHandlers} style={{
   width: 82, height: 82, borderRadius: 14,
   borderWidth: dragging ? 2 : 1, borderColor: dragging ? '#9B5BE6' : '#E7DDF3',
   backgroundColor: dragging ? '#EEE2FF' : '#FFFFFF',
-  alignItems: 'center', justifyContent: 'center', opacity: dragging ? 0.7 : 1,
+  alignItems: 'center', justifyContent: 'center', opacity: dragging ? 0.85 : 1,
+  zIndex: dragging ? 100 : 0,elevation: dragging ? 12 : 0,
+  transform: offset.getTranslateTransform(),
  }}>
   <Image source={{ uri: piece.imageUrl }} resizeMode="contain" style={{ width: 70, height: 70 }} />
- </View>;
+ </Animated.View>;
 }
 
 export function PuzzleRenderer({ pieces, boardImageUrl, placements, disabled, onDrop }: Props) {
