@@ -30,17 +30,16 @@ export function AudioContent({uri,onFinish}:Props){
  return <View style={{gap:7}}>
   <View style={{minHeight:66,paddingHorizontal:13,paddingVertical:10,borderRadius:19,
    borderWidth:1,borderColor:'#E4D7F5',backgroundColor:'#FFFFFF',
-   flexDirection:'row-reverse',alignItems:'center',gap:13}}>
+   flexDirection:'row',alignItems:'center',gap:13}}>
    <Pressable accessibilityRole="button" accessibilityLabel={status.playing?'مکث صدا':'پخش صدا'}
     disabled={!status.isLoaded} onPress={()=>{void toggle();}}
-    style={{height:44,width:44,borderRadius:16,backgroundColor:'#7950BE',
-     opacity:status.isLoaded?1:0.5,justifyContent:'center',alignItems:'center'}}>
-    <AppText weight="700" style={{color:'#FFFFFF',fontSize:21,lineHeight:28,textAlign:'center'}}>
+    style={{height:44,width:44,opacity:status.isLoaded?1:0.5,justifyContent:'center',alignItems:'center'}}>
+    <AppText weight="700" style={{color:'#7950BE',fontSize:25,lineHeight:28,textAlign:'center'}}>
      {status.playing?'Ⅱ':'▶'}
     </AppText>
    </Pressable>
    <View style={{flex:1,height:8,borderRadius:99,overflow:'hidden',
-    backgroundColor:'#EAE3F4',justifyContent:'center'}}>
+    backgroundColor:'#EAE3F4',justifyContent:'center',flexDirection:'row-reverse'}}>
     <View style={{height:8,width:`${progress}%`,backgroundColor:'#A779E7',borderRadius:99}}/>
    </View>
   </View>
