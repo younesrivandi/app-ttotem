@@ -6,6 +6,7 @@ const capped=(n:number,max:number)=>Math.max(0,Math.min(max,Number.isFinite(n)?n
 export function classifyChallenge(spec:ChallengeSpec):GameKind{
  const kind=String(spec.kind??'').toLowerCase();
  if(spec.data?.videoUrl)return 'video';
+ if(kind.includes('puzzle'))return 'puzzle';
  if(kind.includes('choice'))return 'choice';
  if(kind.includes('sort'))return 'sorting';
  if(kind.includes('voice'))return 'voice';
