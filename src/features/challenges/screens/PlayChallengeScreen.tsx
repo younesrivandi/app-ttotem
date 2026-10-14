@@ -56,7 +56,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
     const updated=applyFeedback(current,response);
     return !response.isCorrect&&kind==='path'?{...updated,strokes:[]}:updated;
    });
-   if(!response.isCorrect&&(kind==='path'||kind==='sorting'||kind==='voice'))setToast('پاسخ درست نبود، دوباره تلاش کن!');
+   if(!response.isCorrect&&(kind==='path'||kind==='sorting'||kind==='voice'||kind==='choice'))setToast('پاسخ درست نبود، دوباره تلاش کن!');
    void (response.isCorrect?gameHaptics.correct():gameHaptics.incorrect());
    if(response.isCorrect){
     await Promise.all([
@@ -64,12 +64,25 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      queryClient.invalidateQueries({queryKey:['child',childId,'stages',stageId,'result']}),
      queryClient.invalidateQueries({queryKey:queryKeys.journeys(childId)}),
     ]);
-    if(kind==='sorting'||kind==='path'||kind==='voice') await proceed(response.nextChallengeId);
+    if(kind==='sorting'||kind==='path'||kind==='voice'||kind==='choice') await proceed(response.nextChallengeId);
    }
   }catch(e){
    setError(message(e));
    update(current=>({...current,submitting:false}));
   }finally{inFlight.current=false;}
+ };
+ const selectChoiceAndCheck=(index:number)=>{
+  if(inFlight.current||kind!=='choice'||!spec)return;
+  const current=latestState.current;
+  if(!current||current.submitting||current.solved)return;
+  const next=toggleChoice(current,index,spec.data?.options?.length??0,!!spec.data?.allowMultiple);
+  if(next===current)return;
+  latestState.current=next;
+  setState(next);
+  setFeedback(null);
+  // Multi-select questions are also checked after each meaningful selection.
+  // The server is the sole authority for correctness; the user may keep editing after a mismatch.
+  if(next.selected.length>0)void submit(next);
  };
  const moveSortAndCheck=(from:number,to:number)=>{
   if(inFlight.current||kind!=='sorting')return;
@@ -148,7 +161,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  const data=spec?.data;
  const renderer=(()=>{if(!state||!spec)return null;switch(kind){
  case 'puzzle':return <PuzzleRenderer pieces={data?.pieces??[]} boardImageUrl={data?.boardImageUrl??data?.maskImageUrl} placements={placements} disabled={sending||solved} onDrop={placePuzzlePiece}/>;
- case 'choice':return <ChoiceRenderer options={data?.options??[]} selected={state.selected} onSelect={i=>update(s=>toggleChoice(s,i,data?.options?.length??0,!!data?.allowMultiple))} disabled={sending||solved}/>;
+ case 'choice':return <ChoiceRenderer options={data?.options??[]} selected={state.selected} onSelect={selectChoiceAndCheck} disabled={sending||solved}/>;
  case 'sorting':return <SortingRenderer items={data?.items??[]} order={state.sortOrder} onMove={moveSortAndCheck} disabled={sending||solved}/>;
  case 'matching':return <MatchingRenderer sources={data?.collections?.[0]??[]} targets={data?.collections?.[1]??[]} matches={state.matches} onConnect={(i,j)=>update(s=>connectMatch(s,i,j,data?.collections?.[0]?.length??0,data?.collections?.[1]?.length??0))} disabled={sending||solved}/>;
  case 'path':return <PathRenderer imageUrl={data?.displayImageUrl} strokes={state.strokes} onChange={(strokes:Stroke[])=>update(s=>setStrokes(s,strokes))} onStrokeEnd={finishPathAndCheck} onDrawingChange={setDrawing} disabled={sending||solved}/>;
@@ -209,7 +222,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      loading?<LoadingState title="دریافت بازی…"/>:
      challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:
      spec&&state?<>{renderer}
-      {feedback&&!feedback.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
+      {feedback&&!feedback.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'&&kind!=='choice'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
       {feedback?.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
       {error?<AppText tone="error">{error}</AppText>:null}
      </>:null}
@@ -219,7 +232,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
     backgroundColor:'#38264F',borderRadius:16,paddingHorizontal:18,paddingVertical:14,
     shadowColor:'#241632',shadowOpacity:0.3,shadowRadius:12,
    }}><AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:14}}>{toast}</AppText></View>}
-   {spec&&state&&enabled&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'&&<View style={{paddingVertical:12,borderTopWidth:1,borderTopColor:'#EDE6F7'}}>
+   {spec&&state&&enabled&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'&&kind!=='choice'&&<View style={{paddingVertical:12,borderTopWidth:1,borderTopColor:'#EDE6F7'}}>
      {feedback?.isCorrect?
        <Pressable accessibilityRole="button" onPress={()=>{void proceed(feedback.nextChallengeId).catch(e=>setError(message(e)));}}
          style={{height:52,borderRadius:15,backgroundColor:'#764EB2',justifyContent:'center',alignItems:'center'}}>
