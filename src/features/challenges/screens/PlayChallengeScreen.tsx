@@ -12,7 +12,8 @@ import {bootstrapSession,currentSession,subscribeSession} from '@/services/auth/
 import {queryKeys} from '@/services/api/queryKeys';
 import {challengesResponseSchema} from '@/features/stages/model/challenges';
 import {applyFeedback,buildAttempt,canSubmit,classifyChallenge,connectMatch,initialGameState,moveSorting,resolveNextStep,setStrokes,toggleChoice} from '../engine';
-import type {ChallengeSpec,EngineState,ServerFeedback,Stroke} from '../engine';
+import type {ChallengeSpec,EngineState,ServerFeedback,Stroke,PuzzlePlacement} from '../engine';
+import {PuzzleRenderer} from '../renderers/PuzzleRenderer';
 import {submitAttempt} from '../api/attemptsApi';
 import {ChoiceRenderer} from '../renderers/ChoiceRenderer';
 import {SortingRenderer} from '../renderers/SortingRenderer';
@@ -26,13 +27,13 @@ type Detail=ChallengeSpec&{title?:string;prompt?:string;description?:string;inst
 const message=(error:unknown)=>error instanceof Error?error.message:'خطای نامشخص';
 function detailFromResponse(value:unknown):Detail{if(!value||typeof value!=='object')throw new Error('پاسخ چالش معتبر نیست');const obj=value as Record<string,unknown>;if(typeof obj.kind!=='string')throw new Error('نوع چالش در پاسخ سرور موجود نیست');if(obj.data!==undefined&&(typeof obj.data!=='object'||obj.data===null))throw new Error('داده چالش معتبر نیست');return obj as Detail;}
 export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challengeId:string}){
- const router=useRouter();const queryClient=useQueryClient();const inFlight=useRef(false);const latestState=useRef<EngineState|null>(null);const [ready,setReady]=useState(false);const [childId,setChildId]=useState('');const [state,setState]=useState<EngineState|null>(null);const [feedback,setFeedback]=useState<ServerFeedback|null>(null);const [error,setError]=useState('');const [toast,setToast]=useState('');const [drawing,setDrawing]=useState(false);
+ const router=useRouter();const queryClient=useQueryClient();const inFlight=useRef(false);const latestState=useRef<EngineState|null>(null);const [ready,setReady]=useState(false);const [childId,setChildId]=useState('');const [state,setState]=useState<EngineState|null>(null);const [feedback,setFeedback]=useState<ServerFeedback|null>(null);const [error,setError]=useState('');const [toast,setToast]=useState('');const [drawing,setDrawing]=useState(false);const [placements,setPlacements]=useState<Record<string,PuzzlePlacement>>({});
  useEffect(()=>{let live=true;const sync=()=>{if(live){setChildId(currentSession().childId??'');setReady(true)}};void bootstrapSession().then(sync);const unsub=subscribeSession(sync);return()=>{live=false;unsub()};},[]);
  const enabled=ready&&!!childId&&!!currentSession().child?.accessToken;
  const challenge=useQuery({queryKey:['challenge-detail',childId,stageId,challengeId],queryFn:async()=>detailFromResponse(await api.challenge(stageId,challengeId)),enabled});
  const summary=useQuery({queryKey:queryKeys.challenges(childId,stageId),queryFn:async()=>challengesResponseSchema.parse(await api.challenges(stageId)),enabled});
  const spec=challenge.data;const kind=spec?classifyChallenge(spec):'unsupported';
- useEffect(()=>{inFlight.current=false;latestState.current=null;setState(null);setFeedback(null);setError('');setToast('');setDrawing(false);},[stageId,challengeId]);
+ useEffect(()=>{inFlight.current=false;latestState.current=null;setState(null);setFeedback(null);setError('');setToast('');setDrawing(false);setPlacements({});},[stageId,challengeId]);
  useEffect(()=>{if(spec){const initial=initialGameState(spec);latestState.current=initial;setState(initial);}},[spec,stageId,challengeId]);
  useEffect(()=>{if(!toast)return;const id=setTimeout(()=>setToast(''),2800);return()=>clearTimeout(id);},[toast]);
  const update=(fn:(s:EngineState)=>EngineState)=>{const current=latestState.current;if(!current)return;const next=fn(current);latestState.current=next;setState(next);};
@@ -87,8 +88,56 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
   latestState.current=next;setState(next);setFeedback(null);
   void submit(next);
  };
+ const placePuzzlePiece=async(pieceId:string,x:number,y:number)=>{
+  const current=latestState.current;
+  if(kind!=='puzzle'||inFlight.current||!current||current.solved||placements[pieceId])return;
+  inFlight.current=true;setError('');setToast('');
+  update(value=>({...value,submitting:true}));
+  try{
+   const raw=await api.activity(stageId,challengeId,'place-piece',{pieceId,x,y},Date.now()-current.startedAt);
+   if(!raw||typeof raw!=='object')throw new Error('پاسخ بررسی قطعه معتبر نیست');
+   const result=raw as Record<string,unknown>;
+   if(!result.isCorrect||!result.canonical||typeof result.canonical!=='object'){
+    setToast('جای قطعه درست نیست، دوباره تلاش کن!');
+    void gameHaptics.incorrect();
+    update(value=>({...value,submitting:false,mistakes:typeof result.mistakeCount==='number'?result.mistakeCount:value.mistakes+1}));
+    return;
+   }
+   const canonical=result.canonical as Record<string,unknown>;
+   const values=['x','y','width','height'].map(key=>canonical[key]);
+   if(values.some(value=>typeof value!=='number'||!Number.isFinite(value)))throw new Error('مختصات قطعه از سرور معتبر نیست');
+   const placement:PuzzlePlacement={pieceId:String(canonical.pieceId??pieceId),x:values[0] as number,y:values[1] as number,
+    width:values[2] as number,height:values[3] as number};
+   const next={...placements,[pieceId]:placement};
+   setPlacements(next);
+   void gameHaptics.correct();
+   const mistakeCount=typeof result.mistakeCount==='number'?result.mistakeCount:current.mistakes;
+   update(value=>({...value,submitting:false,mistakes:mistakeCount}));
+   if(result.isReadyToComplete===true){
+    // Do not submit a puzzle until the server confirms all pieces are ready.
+    const answer=Object.values(next).map(item=>({pieceId:item.pieceId,x:item.x,y:item.y}));
+    const feedbackResult=await submitAttempt(stageId,challengeId,{
+     answer,timeSpentMilliseconds:Math.max(0,Date.now()-current.startedAt),mistakeCount,
+    });
+    setFeedback(feedbackResult);
+    update(value=>applyFeedback(value,feedbackResult));
+    if(feedbackResult.isCorrect){
+     await Promise.all([
+      queryClient.invalidateQueries({queryKey:queryKeys.challenges(childId,stageId)}),
+      queryClient.invalidateQueries({queryKey:['child',childId,'stages',stageId,'result']}),
+      queryClient.invalidateQueries({queryKey:queryKeys.journeys(childId)}),
+     ]);
+     await proceed(feedbackResult.nextChallengeId);
+    }else setToast('پازل هنوز کامل نشده، دوباره تلاش کن!');
+   }
+  }catch(e){
+   setError(message(e));
+   update(value=>({...value,submitting:false}));
+  }finally{inFlight.current=false;}
+ };
  const data=spec?.data;
  const renderer=(()=>{if(!state||!spec)return null;switch(kind){
+ case 'puzzle':return <PuzzleRenderer pieces={data?.pieces??[]} boardImageUrl={data?.boardImageUrl??data?.maskImageUrl} placements={placements} disabled={sending||solved} onDrop={placePuzzlePiece}/>;
  case 'choice':return <ChoiceRenderer options={data?.options??[]} selected={state.selected} onSelect={i=>update(s=>toggleChoice(s,i,data?.options?.length??0,!!data?.allowMultiple))} disabled={sending||solved}/>;
  case 'sorting':return <SortingRenderer items={data?.items??[]} order={state.sortOrder} onMove={moveSortAndCheck} disabled={sending||solved}/>;
  case 'matching':return <MatchingRenderer sources={data?.collections?.[0]??[]} targets={data?.collections?.[1]??[]} matches={state.matches} onConnect={(i,j)=>update(s=>connectMatch(s,i,j,data?.collections?.[0]?.length??0,data?.collections?.[1]?.length??0))} disabled={sending||solved}/>;
@@ -144,8 +193,8 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      loading?<LoadingState title="دریافت بازی…"/>:
      challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:
      spec&&state?<>{renderer}
-      {feedback&&!feedback.isCorrect&&kind!=='sorting'&&kind!=='path'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
-      {feedback?.isCorrect&&kind!=='sorting'&&kind!=='path'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
+      {feedback&&!feedback.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
+      {feedback?.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
       {error?<AppText tone="error">{error}</AppText>:null}
      </>:null}
    </ScrollView>
@@ -154,7 +203,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
     backgroundColor:'#38264F',borderRadius:16,paddingHorizontal:18,paddingVertical:14,
     shadowColor:'#241632',shadowOpacity:0.3,shadowRadius:12,
    }}><AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:14}}>{toast}</AppText></View>}
-   {spec&&state&&enabled&&kind!=='sorting'&&kind!=='path'&&<View style={{paddingVertical:12,borderTopWidth:1,borderTopColor:'#EDE6F7'}}>
+   {spec&&state&&enabled&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&<View style={{paddingVertical:12,borderTopWidth:1,borderTopColor:'#EDE6F7'}}>
      {feedback?.isCorrect?
        <Pressable accessibilityRole="button" onPress={()=>{void proceed(feedback.nextChallengeId).catch(e=>setError(message(e)));}}
          style={{height:52,borderRadius:15,backgroundColor:'#764EB2',justifyContent:'center',alignItems:'center'}}>
