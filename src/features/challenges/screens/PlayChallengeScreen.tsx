@@ -54,9 +54,10 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
    setFeedback(response);
    update(current=>{
     const updated=applyFeedback(current,response);
+    if(!response.isCorrect&&kind==='matching')return {...updated,matches:[]};
     return !response.isCorrect&&kind==='path'?{...updated,strokes:[]}:updated;
    });
-   if(!response.isCorrect&&(kind==='path'||kind==='sorting'||kind==='voice'||kind==='choice'))setToast('پاسخ درست نبود، دوباره تلاش کن!');
+   if(!response.isCorrect&&(kind==='path'||kind==='sorting'||kind==='voice'||kind==='choice'||kind==='matching'))setToast('پاسخ درست نبود، دوباره تلاش کن!');
    void (response.isCorrect?gameHaptics.correct():gameHaptics.incorrect());
    if(response.isCorrect){
     await Promise.all([
@@ -252,7 +253,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      loading?<LoadingState title="دریافت بازی…"/>:
      challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:
      spec&&state?<>{renderer}
-      {feedback&&!feedback.isCorrect&&kind==='matching'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
+      
       {feedback?.isCorrect&&kind==='matching'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
       {error?<AppText tone="error">{error}</AppText>:null}
      </>:null}
