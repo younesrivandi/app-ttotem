@@ -42,7 +42,7 @@ function DraggablePiece({piece,disabled,selected,onSelect,onDrop}:{
   transform:offset.getTranslateTransform(),
  }}>
   <Pressable accessibilityRole="button"
-   accessibilityLabel={\`قطعه \${piece.id}؛ برای قرار دادن روی صفحه پازل لمس کنید یا بکشید\`}
+   accessibilityLabel={`قطعه ${piece.id}؛ برای قرار دادن روی صفحه پازل لمس کنید یا بکشید`}
    accessibilityState={{selected,disabled}} disabled={disabled}
    onPress={()=>callbacks.current.onSelect(piece.id)} style={{
     width:'100%',height:'100%',borderRadius:14,borderWidth:selected||dragging?2:1,
@@ -131,12 +131,12 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
     accessibilityRole="button" accessibilityLabel="محل قراردادن قطعه انتخاب‌شده روی صفحه پازل"
     style={{width:frame.width||'100%',height:frame.height||240,aspectRatio:frame.width?undefined:ratio,
      overflow:'hidden',borderRadius:20,borderWidth:1,borderColor:'#E7DDF3',backgroundColor:'#FFFFFF'}}>
-    {!!background&&<Image key={\`board:\${background}:\${retry}\`} source={{uri:background}}
+    {!!background&&<Image key={`board:${background}:${retry}`} source={{uri:background}}
      resizeMode="contain" pointerEvents="none"
      style={{position:'absolute',left:0,right:0,top:0,bottom:0,width:'100%',height:'100%'}}
      onLoad={event=>markLoaded(background,event.nativeEvent.source?.width??0,event.nativeEvent.source?.height??0)}
      onError={()=>markFailed(background)}/>}
-    {!!guide&&<Image key={\`guide:\${guide}:\${retry}\`} source={{uri:guide}}
+    {!!guide&&<Image key={`guide:${guide}:${retry}`} source={{uri:guide}}
      resizeMode="contain" pointerEvents="none"
      style={{position:'absolute',left:0,right:0,top:0,bottom:0,width:'100%',height:'100%'}}
      onLoad={event=>markLoaded(guide,event.nativeEvent.source?.width??0,event.nativeEvent.source?.height??0)}
