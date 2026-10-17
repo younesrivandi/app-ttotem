@@ -1,26 +1,209 @@
-import {useMemo,useRef,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {PanResponder,Pressable,View,type LayoutChangeEvent} from 'react-native';
-import Svg,{Line} from 'react-native-svg';
+import Svg,{Circle,Line} from 'react-native-svg';
 import type {Match} from '../engine';
 import {ItemLabel} from './shared';
 import {useAppTheme} from '@/theme/ThemeProvider';
+
+type Side='source'|'target';
 type Rect={x:number;y:number;width:number;height:number};
-/** Native PanResponder handles dragging; tapping source then target is a keyboard/screen-reader alternative. */
-export function MatchingRenderer({sources,targets,matches,onConnect,disabled=false}:{sources:readonly unknown[];targets:readonly unknown[];matches:readonly Match[];onConnect:(s:number,t:number)=>void;disabled?:boolean}){
- const {colors}=useAppTheme();const [selected,setSelected]=useState<number|null>(null);const [rects,setRects]=useState<Record<string,Rect>>({});const [drag,setDrag]=useState<{source:number;x:number;y:number}|null>(null);const ref=useRef<{rects:Record<string,Rect>;disabled:boolean;onConnect:(s:number,t:number)=>void}>({rects,disabled,onConnect});ref.current={rects,disabled,onConnect};
- const update=(key:string)=>(e:LayoutChangeEvent)=>{const {x,y,width,height}=e.nativeEvent.layout;setRects(old=>({...old,[key]:{x,y,width,height}}));};
- // All coordinates are relative to the same board container; columns have measured offsets.
- const [columns,setColumns]=useState<Record<string,Rect>>({});const colsRef=useRef(columns);colsRef.current=columns;
- const center=(col:string,key:string)=>{const c=columns[col],r=rects[key];return c&&r?{x:c.x+r.x+r.width/2,y:c.y+r.y+r.height/2}:null;};
- const respond=useMemo(()=>PanResponder.create({onStartShouldSetPanResponder:()=>false,onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>7||Math.abs(g.dy)>7,onPanResponderMove:(_,g)=>{const s=selectedRef.current;if(s===null)return;const c=colsRef.current.left,r=ref.current.rects[`s${s}`];if(c&&r)setDrag({source:s,x:c.x+r.x+r.width/2+g.dx,y:c.y+r.y+r.height/2+g.dy});},onPanResponderRelease:(_,g)=>{const s=selectedRef.current;const left=colsRef.current.left;const right=colsRef.current.right;if(s!==null&&left&&right&&!ref.current.disabled){const start=ref.current.rects[`s${s}`];if(start){const x=left.x+start.x+start.width/2+g.dx,y=left.y+start.y+start.height/2+g.dy;for(let i=0;i<targetsLength.current;i++){const r=ref.current.rects[`t${i}`];if(r&&x>=right.x+r.x&&x<=right.x+r.x+r.width&&y>=right.y+r.y&&y<=right.y+r.y+r.height){ref.current.onConnect(s,i);break;}}}}setDrag(null);selectedRef.current=null;}}),[]);
- const selectedRef=useRef<number|null>(null);const targetsLength=useRef(targets.length);targetsLength.current=targets.length;
- const chooseSource=(i:number)=>{selectedRef.current=i;setSelected(i)};
- const chooseTarget=(i:number)=>{if(selected!==null&&!disabled){onConnect(selected,i);selectedRef.current=null;setSelected(null);}};
- return <View style={{minHeight:Math.max(sources.length,targets.length)*78+12}} {...respond.panHandlers}>
- <View style={{flexDirection:'row-reverse',gap:16}}>
- <View onLayout={e=>{const {x,y,width,height}=e.nativeEvent.layout;setColumns(c=>({...c,left:{x,y,width,height}}));}} style={{flex:1,gap:8}}>{sources.map((v,i)=><Pressable key={i} onLayout={update(`s${i}`)} onPress={()=>chooseSource(i)} disabled={disabled} accessibilityRole="button" accessibilityLabel={`انتخاب مبدأ ${i+1}`} accessibilityState={{selected:selected===i}} style={{borderWidth:selected===i?2:1,borderColor:selected===i?colors.primary:colors.border,borderRadius:10,minHeight:70,padding:8,backgroundColor:colors.surface}}><ItemLabel value={v}/></Pressable>)}</View>
- <View onLayout={e=>{const {x,y,width,height}=e.nativeEvent.layout;setColumns(c=>({...c,right:{x,y,width,height}}));}} style={{flex:1,gap:8}}>{targets.map((v,i)=><Pressable key={i} onLayout={update(`t${i}`)} onPress={()=>chooseTarget(i)} disabled={disabled} accessibilityRole="button" accessibilityLabel={`اتصال به مقصد ${i+1}`} style={{borderWidth:1,borderColor:colors.border,borderRadius:10,minHeight:70,padding:8,backgroundColor:colors.surface}}><ItemLabel value={v}/></Pressable>)}</View>
- </View>
- <Svg pointerEvents="none" width="100%" height="100%" style={{position:'absolute',left:0,top:0}}>{matches.map(m=>{const a=center('left',`s${m.sourceIndex}`),b=center('right',`t${m.targetIndex}`);return a&&b?<Line key={m.sourceIndex} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={colors.primary} strokeWidth={3}/>:null})}{drag?<Line x1={center('left',`s${drag.source}`)?.x??drag.x} y1={center('left',`s${drag.source}`)?.y??drag.y} x2={drag.x} y2={drag.y} stroke={colors.primary} strokeWidth={2} strokeDasharray="5 4"/>:null}</Svg>
+type Selection={side:Side;index:number};
+type Drag=Selection&{x:number;y:number};
+type Props={
+ sources:readonly unknown[];
+ targets:readonly unknown[];
+ matches:readonly Match[];
+ onConnect:(sourceIndex:number,targetIndex:number)=>void;
+ disabled?:boolean;
+};
+type TileProps={
+ value:unknown;
+ side:Side;
+ index:number;
+ selected:boolean;
+ matched:boolean;
+ disabled:boolean;
+ onTap:(side:Side,index:number)=>void;
+ onDragBegin:(side:Side,index:number)=>void;
+ onDragMove:(pageX:number,pageY:number,dx:number,dy:number)=>void;
+ onDragEnd:(pageX:number,pageY:number)=>void;
+ onDragCancel:()=>void;
+ onTouchBegin:()=>void;
+ onLayout:(e:LayoutChangeEvent)=>void;
+};
+
+/** Keep native tap accessibility while claiming horizontal movement as a drag. */
+function MatchTile(props:TileProps){
+ const {colors}=useAppTheme();
+ const latest=useRef(props);
+ latest.current=props;
+ const pan=useMemo(()=>PanResponder.create({
+  onStartShouldSetPanResponder:()=>false,
+  onMoveShouldSetPanResponderCapture:(_,g)=>
+   !latest.current.disabled&&Math.abs(g.dx)>8&&Math.abs(g.dx)>Math.abs(g.dy)*0.65,
+  onPanResponderGrant:()=>{
+   const p=latest.current;
+   if(!p.disabled)p.onDragBegin(p.side,p.index);
+  },
+  onPanResponderMove:(_,g)=>{
+   if(!latest.current.disabled)latest.current.onDragMove(g.moveX,g.moveY,g.dx,g.dy);
+  },
+  onPanResponderRelease:(_,g)=>latest.current.onDragEnd(g.moveX,g.moveY),
+  onPanResponderTerminate:()=>latest.current.onDragCancel(),
+  onPanResponderTerminationRequest:()=>false,
+ }),[]);
+ return <View {...pan.panHandlers} onTouchStart={props.onTouchBegin} onLayout={props.onLayout}
+  style={{width:'100%',maxWidth:220,aspectRatio:1}}>
+  <Pressable accessibilityRole="button"
+   accessibilityLabel={`${props.side==='source'?'آیتم سمت راست':'آیتم سمت چپ'} ${props.index+1}؛ برای اتصال لمس یا به سمت مقابل بکشید`}
+   accessibilityState={{selected:props.selected,disabled:props.disabled}}
+   disabled={props.disabled}
+   onPress={()=>props.onTap(props.side,props.index)}
+   style={{flex:1,borderRadius:18,borderWidth:props.selected?3:props.matched?2:1.5,
+    borderColor:props.selected?colors.primary:props.matched?'#52A878':colors.border,
+    backgroundColor:colors.surface,padding:8,
+    alignItems:'center',justifyContent:'center'}}>
+   <ItemLabel value={props.value}/>
+  </Pressable>
+ </View>;
+}
+
+/** PeerToPeer: either side can start a tap or drag; only the server judges correctness. */
+export function MatchingRenderer({sources,targets,matches,onConnect,disabled=false}:Props){
+ const {colors}=useAppTheme();
+ const board=useRef<View>(null);
+ const boardOrigin=useRef<{x:number;y:number}|null>(null);
+ const [selected,setSelected]=useState<Selection|null>(null);
+ const [drag,setDrag]=useState<Drag|null>(null);
+ const [rects,setRects]=useState<Record<string,Rect>>({});
+ const [columns,setColumns]=useState<Partial<Record<Side,Rect>>>({});
+ const latest=useRef({rects,columns,disabled,onConnect,sourcesCount:sources.length,targetsCount:targets.length});
+ latest.current={rects,columns,disabled,onConnect,sourcesCount:sources.length,targetsCount:targets.length};
+ const dragStart=useRef<Selection|null>(null);
+ const refreshOrigin=()=>{
+  board.current?.measureInWindow((x,y)=>{boardOrigin.current={x,y};});
+ };
+ const remember=(key:string)=>(e:LayoutChangeEvent)=>{
+  // Snapshot the native event before React executes the state updater.
+  const {x,y,width,height}=e.nativeEvent.layout;
+  setRects(previous=>{
+   const old=previous[key];
+   return old&&old.x===x&&old.y===y&&old.width===width&&old.height===height
+    ?previous:{...previous,[key]:{x,y,width,height}};
+  });
+ };
+ const rememberColumn=(side:Side)=>(e:LayoutChangeEvent)=>{
+  const {x,y,width,height}=e.nativeEvent.layout;
+  setColumns(previous=>{
+   const old=previous[side];
+   return old&&old.x===x&&old.y===y&&old.width===width&&old.height===height
+    ?previous:{...previous,[side]:{x,y,width,height}};
+  });
+ };
+ const tileRect=(side:Side,index:number,layout=latest.current)=>{
+  const col=layout.columns[side],item=layout.rects[`${side}:${index}`];
+  return col&&item?{x:col.x+item.x,y:col.y+item.y,width:item.width,height:item.height}:null;
+ };
+ const anchor=(side:Side,index:number)=>{
+  const rect=tileRect(side,index);
+  return rect?{x:side==='source'?rect.x:rect.x+rect.width,y:rect.y+rect.height/2}:null;
+ };
+ const connect=(first:Selection,second:Selection)=>{
+  if(first.side===second.side||latest.current.disabled)return;
+  latest.current.onConnect(first.side==='source'?first.index:second.index,
+   first.side==='target'?first.index:second.index);
+ };
+ const tap=(side:Side,index:number)=>{
+  if(latest.current.disabled)return;
+  const touched:Selection={side,index};
+  if(!selected){setSelected(touched);return;}
+  if(selected.side===side){
+   setSelected(selected.index===index?null:touched);
+  }else{
+   setSelected(null);
+   connect(selected,touched);
+  }
+ };
+ const begin=(side:Side,index:number)=>{
+  if(latest.current.disabled)return;
+  dragStart.current={side,index};
+  setSelected(null);
+  const start=anchor(side,index);
+  if(start)setDrag({side,index,...start});
+  refreshOrigin();
+ };
+ const move=(pageX:number,pageY:number,dx:number,dy:number)=>{
+  const first=dragStart.current;
+  if(!first||latest.current.disabled)return;
+  const point=anchor(first.side,first.index);
+  const origin=boardOrigin.current;
+  if(!point)return;
+  setDrag({...first,x:origin?pageX-origin.x:point.x+dx,
+   y:origin?pageY-origin.y:point.y+dy});
+ };
+ const finish=(pageX:number,pageY:number)=>{
+  const first=dragStart.current;
+  dragStart.current=null;
+  setDrag(null);
+  if(!first||latest.current.disabled)return;
+  const endSide:Side=first.side==='source'?'target':'source';
+  const tryConnect=(x:number,y:number)=>{
+   if(latest.current.disabled)return;
+   const count=endSide==='source'?latest.current.sourcesCount:latest.current.targetsCount;
+   for(let index=0;index<count;index++){
+    const rect=tileRect(endSide,index);
+    if(rect&&x>=rect.x-12&&x<=rect.x+rect.width+12
+     &&y>=rect.y-12&&y<=rect.y+rect.height+12){
+     connect(first,{side:endSide,index});
+     return;
+    }
+   }
+  };
+  if(board.current){
+   board.current.measureInWindow((x,y)=>{
+    boardOrigin.current={x,y};
+    tryConnect(pageX-x,pageY-y);
+   });
+  }else if(boardOrigin.current){
+   tryConnect(pageX-boardOrigin.current.x,pageY-boardOrigin.current.y);
+  }
+ };
+ const cancel=()=>{dragStart.current=null;setDrag(null);};
+ useEffect(()=>{if(disabled){setSelected(null);cancel();}},[disabled]);
+ const currentAnchor=drag?anchor(drag.side,drag.index):null;
+ return <View ref={board} collapsable={false} style={{width:'100%',minHeight:120}}>
+  <Svg pointerEvents="none" width="100%" height="100%"
+   style={{position:'absolute',left:0,top:0}}>
+   {matches.map(match=>{
+    const from=anchor('source',match.sourceIndex);
+    const to=anchor('target',match.targetIndex);
+    return from&&to?<Line key={match.sourceIndex} x1={from.x} y1={from.y}
+     x2={to.x} y2={to.y} stroke={colors.primary} strokeWidth={4}
+     strokeLinecap="round"/>:null;
+   })}
+   {drag&&currentAnchor?<Line x1={currentAnchor.x} y1={currentAnchor.y}
+    x2={drag.x} y2={drag.y} stroke={colors.primary} strokeWidth={4}
+    strokeDasharray="7 5" strokeLinecap="round"/>:null}
+   {drag&&currentAnchor?<Circle cx={currentAnchor.x} cy={currentAnchor.y}
+    r={5} fill={colors.primary}/>:null}
+  </Svg>
+  <View style={{flexDirection:'row-reverse',gap:44,alignItems:'flex-start'}}>
+   <View onLayout={rememberColumn('source')} style={{flex:1,gap:14,alignItems:'flex-end'}}>
+    {sources.map((value,index)=><MatchTile key={index} value={value} side="source"
+     index={index} selected={selected?.side==='source'&&selected.index===index}
+     matched={matches.some(m=>m.sourceIndex===index)} disabled={disabled}
+     onTap={tap} onDragBegin={begin} onDragMove={move} onDragEnd={finish}
+     onDragCancel={cancel} onTouchBegin={refreshOrigin}
+     onLayout={remember(`source:${index}`)}/>)}
+   </View>
+   <View onLayout={rememberColumn('target')} style={{flex:1,gap:14,alignItems:'flex-start'}}>
+    {targets.map((value,index)=><MatchTile key={index} value={value} side="target"
+     index={index} selected={selected?.side==='target'&&selected.index===index}
+     matched={matches.some(m=>m.targetIndex===index)} disabled={disabled}
+     onTap={tap} onDragBegin={begin} onDragMove={move} onDragEnd={finish}
+     onDragCancel={cancel} onTouchBegin={refreshOrigin}
+     onLayout={remember(`target:${index}`)}/>)}
+   </View>
+  </View>
  </View>;
 }
