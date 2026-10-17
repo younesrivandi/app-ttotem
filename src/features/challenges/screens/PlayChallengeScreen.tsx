@@ -141,8 +141,14 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  const pathDrawingChange=(isDrawing:boolean)=>{
   drawingRef.current=isDrawing;
   setDrawing(isDrawing);
-  // Cancel validation as soon as the next finger stroke begins, not on release.
+  // Cancel as soon as a finger touches down. Even a brief tap/OS-cancel
+  // must re-arm the check for previously completed strokes on release.
   if(isDrawing)pathIdle.current?.cancel();
+  else{
+   const current=latestState.current;
+   if(kind==='path'&&!inFlight.current&&current&&!current.submitting&&!current.solved
+    &&current.strokes.length>0)pathIdle.current?.schedule();
+  }
  };
  const resetPathAfterError=()=>{
   pathIdle.current?.cancel();
