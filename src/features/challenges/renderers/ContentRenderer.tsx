@@ -11,7 +11,7 @@ export function ContentRenderer({text,imageUrl,audioUrl,videoUrl,onMediaFinished
  const image=imageUrl?<Image
    source={{uri:imageUrl}}
    style={standaloneVisual?{flex:1,width:'100%',height:'100%'}:{width:'100%',height:Math.min(height*0.72,Math.max(280,width*0.9))}}
-   resizeMode="contain"
+   resizeMode={standaloneVisual?'cover':'contain'}
    accessibilityLabel="تصویر محتوای چالش"
  />:null;
  const video=videoUrl?<VideoContent key={videoUrl} uri={videoUrl} fill={standaloneVisual}
@@ -19,7 +19,7 @@ export function ContentRenderer({text,imageUrl,audioUrl,videoUrl,onMediaFinished
  if(standaloneVisual){
   return <View style={{flex:1,minHeight:0,width:'100%'}}>{image}{video}</View>;
  }
- return <ScrollView style={{flex:1,width:'100%'}} contentContainerStyle={{flexGrow:1,gap:12,paddingHorizontal:16,paddingVertical:12}}
+ return <ScrollView style={{flex:1,width:'100%'}} contentContainerStyle={{flexGrow:1,gap:8,paddingHorizontal:0,paddingVertical:0}}
    keyboardShouldPersistTaps="handled">
    {image}
    {text?<AppText>{text}</AppText>:null}
