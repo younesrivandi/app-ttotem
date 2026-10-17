@@ -2,7 +2,7 @@ import { useEffect,useState } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams,useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
 import { EmptyState,ErrorState,LoadingState } from '@/components/ui/AsyncState';
@@ -14,10 +14,9 @@ import { challengeLocked,nextChallengeId } from '../model/challenges';
 import { ChallengeCard } from '../components/ChallengeCard';
 import { StageResultSheet } from '@/features/results/components/StageResultSheet';
 import { tabArtwork } from '@/components/navigation/tabArtwork';
-import { resetStoryRun, storyRunCompleted } from '../model/stages';
 const message=(e:unknown)=>e instanceof Error?e.message:'خطای ناشناخته';
 export function StageChallengesScreen({stageId}:{stageId:string}){
- const router=useRouter();const insets=useSafeAreaInsets();const params=useLocalSearchParams<{result?:string}>();const [childId,setChildId]=useState('');const [ready,setReady]=useState(false);const [resultOpen,setResultOpen]=useState(false);
+ const router=useRouter();const queryClient=useQueryClient();const insets=useSafeAreaInsets();const params=useLocalSearchParams<{result?:string}>();const [childId,setChildId]=useState('');const [ready,setReady]=useState(false);const [resultOpen,setResultOpen]=useState(false);
  useEffect(()=>{let alive=true;const sync=()=>{if(alive){setChildId(currentSession().childId??'');setReady(true);}};void bootstrapSession().then(sync);const unsub=subscribeSession(sync);return()=>{alive=false;unsub();};},[]);
  useEffect(()=>{if(params.result==='1')setResultOpen(true);},[params.result,stageId]);
  const authorized=ready&&!!childId&&!!currentSession().child?.accessToken;
@@ -30,12 +29,13 @@ export function StageChallengesScreen({stageId}:{stageId:string}){
  const completeCount=query.data?.completedCount??0;const totalCount=query.data?.totalCount??0;const complete=totalCount>0&&completeCount>=totalCount;
  const stageType=stagesQuery.data?.stages.find(item=>item.stageId===stageId)?.type?.toLowerCase();
  useEffect(()=>{
-  if(params.result==='1'&&complete&&stageType==='story'&&journeyId&&childId){
-   storyRunCompleted(childId,journeyId,stageId);
+  // A completed stage must refresh the journey map for every stage type.
+  if(params.result==='1'&&complete&&journeyId&&childId){
+   void queryClient.invalidateQueries({queryKey:queryKeys.stages(childId,journeyId)});
   }
- },[params.result,complete,stageType,journeyId,childId,stageId]);
+ },[params.result,complete,journeyId,childId,queryClient]);
  const percentage=totalCount>0?Math.round(Math.min(100,completeCount/totalCount*100)):0;
- const journeyBack=()=>{if(stageType==='story'&&!complete&&journeyId)resetStoryRun(childId,journeyId);if(journeyId)router.replace({pathname:'/journeys/[journeyId]',params:{journeyId}});else router.replace('/journeys');};
+ const journeyBack=()=>{if(journeyId)router.replace({pathname:'/journeys/[journeyId]',params:{journeyId}});else router.replace('/journeys');};
  return <SafeAreaView edges={['top','bottom','left','right']} style={{flex:1,backgroundColor:'#FFFFFF'}}>
  <View style={{flex:1,backgroundColor:'#FFFFFF'}}>
  <ScrollView keyboardShouldPersistTaps="handled" style={{flex:1,backgroundColor:'#FFFFFF'}} contentContainerStyle={{width:'100%',maxWidth:880,alignSelf:'center',paddingHorizontal:16,gap:14,paddingTop:14,paddingBottom:160+insets.bottom,backgroundColor:'#FFFFFF'}}>
