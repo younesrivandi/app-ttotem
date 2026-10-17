@@ -245,15 +245,15 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
     backgroundColor:'#38264F',borderRadius:16,paddingHorizontal:18,paddingVertical:14,
     shadowColor:'#241632',shadowOpacity:0.3,shadowRadius:12,
    }}><AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:14}}>{toast}</AppText></View>}
-   {spec&&state&&enabled&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'&&kind!=='choice'&&<View style={{paddingVertical:12,borderTopWidth:1,borderTopColor:'#EDE6F7'}}>
+   {spec&&state&&enabled&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'&&kind!=='choice'&&<View style={{paddingVertical:fullScreenContent?0:12,borderTopWidth:fullScreenContent?0:1,borderTopColor:'#EDE6F7'}}>
      {feedback?.isCorrect?
        <Pressable accessibilityRole="button" onPress={()=>{void proceed(feedback.nextChallengeId).catch(e=>setError(message(e)));}}
-         style={{height:52,borderRadius:15,backgroundColor:'#764EB2',justifyContent:'center',alignItems:'center'}}>
+         style={{height:52,borderRadius:fullScreenContent?0:15,backgroundColor:'#764EB2',justifyContent:'center',alignItems:'center'}}>
          <AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:23}}>←</AppText>
        </Pressable>:
        <Pressable accessibilityRole="button" disabled={sending||!canSubmit(spec,state)||solved}
          onPress={()=>{void submit()}}
-         style={{height:52,borderRadius:15,backgroundColor:sending||!canSubmit(spec,state)||solved?'#B6A7CE':'#764EB2',justifyContent:'center',alignItems:'center'}}>
+         style={{height:52,borderRadius:fullScreenContent?0:15,backgroundColor:sending||!canSubmit(spec,state)||solved?'#B6A7CE':'#764EB2',justifyContent:'center',alignItems:'center'}}>
          <AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:23}}>←</AppText>
        </Pressable>}
    </View>}
