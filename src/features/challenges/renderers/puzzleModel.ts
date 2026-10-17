@@ -35,7 +35,11 @@ export function resolvePuzzleMedia(challenge:unknown,baseUrl:string):PuzzleMedia
  const data=record(detail.data);
  // The API's full board and optional overlay can be supplied separately.
  const background=resolvePuzzleUri(pick(data,['boardImageUrl','displayImageUrl','imageUrl','backgroundImageUrl','titleImageUrl'])
-  ??pick(detail,['imageUrl','displayImageUrl','boardImageUrl','titleImageUrl']),baseUrl);
+  ??pick(detail,['imageUrl','displayImageUrl','boardImageUrl','titleImageUrl'])
+  ??pick(record(data.title),['imageUrl'])
+  ??pick(record(data.prompt),['imageUrl'])
+  ??pick(record(detail.title),['imageUrl'])
+  ??pick(record(detail.prompt),['imageUrl']),baseUrl);
  const guide=resolvePuzzleUri(pick(data,['maskImageUrl','guideImageUrl','targetImageUrl','templateImageUrl'])
   ??pick(detail,['maskImageUrl','guideImageUrl']),baseUrl);
  const list=pick(data,['pieces','puzzlePieces']);
