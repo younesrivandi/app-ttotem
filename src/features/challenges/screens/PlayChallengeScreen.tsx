@@ -22,6 +22,7 @@ import {ChoiceRenderer} from '../renderers/ChoiceRenderer';
 import {SortingRenderer} from '../renderers/SortingRenderer';
 import {MatchingRenderer} from '../renderers/MatchingRenderer';
 import {PathRenderer} from '../renderers/PathRenderer';
+import {createPathIdleScheduler} from '../renderers/pathIdleScheduler';
 import {ContentRenderer} from '../renderers/ContentRenderer';
 import {VoiceRecorder} from '../renderers/VoiceRecorder';
 import {gameHaptics} from '../services/feedback';
@@ -33,13 +34,18 @@ const mediaText=(value:MediaValue|undefined):string|undefined=>
  typeof value==='string'?value:value?.text??value?.title;
 function detailFromResponse(value:unknown):Detail{if(!value||typeof value!=='object')throw new Error('پاسخ چالش معتبر نیست');const obj=value as Record<string,unknown>;if(typeof obj.kind!=='string')throw new Error('نوع چالش در پاسخ سرور موجود نیست');if(obj.data!==undefined&&(typeof obj.data!=='object'||obj.data===null))throw new Error('داده چالش معتبر نیست');return obj as Detail;}
 export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challengeId:string}){
- const router=useRouter();const queryClient=useQueryClient();const inFlight=useRef(false);const latestState=useRef<EngineState|null>(null);const [ready,setReady]=useState(false);const [childId,setChildId]=useState('');const [state,setState]=useState<EngineState|null>(null);const [feedback,setFeedback]=useState<ServerFeedback|null>(null);const [error,setError]=useState('');const [toast,setToast]=useState('');const [drawing,setDrawing]=useState(false);const [placements,setPlacements]=useState<Record<string,PuzzlePlacement>>({});
+ const router=useRouter();const queryClient=useQueryClient();const inFlight=useRef(false);const latestState=useRef<EngineState|null>(null);const [ready,setReady]=useState(false);const [childId,setChildId]=useState('');const [state,setState]=useState<EngineState|null>(null);const [feedback,setFeedback]=useState<ServerFeedback|null>(null);const [error,setError]=useState('');const [toast,setToast]=useState('');const [drawing,setDrawing]=useState(false);const drawingRef=useRef(false);
+ const pathIdleCallback=useRef<()=>void>(()=>{});
+ const pathIdle=useRef<ReturnType<typeof createPathIdleScheduler>|null>(null);
+ if(!pathIdle.current)pathIdle.current=createPathIdleScheduler(()=>pathIdleCallback.current());const [placements,setPlacements]=useState<Record<string,PuzzlePlacement>>({});
  useEffect(()=>{let live=true;const sync=()=>{if(live){setChildId(currentSession().childId??'');setReady(true)}};void bootstrapSession().then(sync);const unsub=subscribeSession(sync);return()=>{live=false;unsub()};},[]);
  const enabled=ready&&!!childId&&!!currentSession().child?.accessToken;
  const challenge=useQuery({queryKey:['challenge-detail',childId,stageId,challengeId],queryFn:async()=>detailFromResponse(await api.challenge(stageId,challengeId)),enabled});
  const summary=useQuery({queryKey:queryKeys.challenges(childId,stageId),queryFn:async()=>challengesResponseSchema.parse(await api.challenges(stageId)),enabled});
  const spec=challenge.data;const kind=spec?classifyChallenge(spec):'unsupported';
- useEffect(()=>{inFlight.current=false;latestState.current=null;setState(null);setFeedback(null);setError('');setToast('');setDrawing(false);setPlacements({});},[stageId,challengeId]);
+ useEffect(()=>{pathIdle.current?.cancel();drawingRef.current=false;inFlight.current=false;latestState.current=null;setState(null);setFeedback(null);setError('');setToast('');setDrawing(false);setPlacements({});
+  return()=>pathIdle.current?.cancel();
+ },[stageId,challengeId]);
  useEffect(()=>{if(spec){const initial=initialGameState(spec);latestState.current=initial;setState(initial);}},[spec,stageId,challengeId]);
  useEffect(()=>{if(!toast)return;const id=setTimeout(()=>setToast(''),2800);return()=>clearTimeout(id);},[toast]);
  const update=(fn:(s:EngineState)=>EngineState)=>{const current=latestState.current;if(!current)return;const next=fn(current);latestState.current=next;setState(next);};
@@ -117,13 +123,33 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
   // Only a complete set is checked; the backend owns correctness and progression.
   if(canSubmit(spec,next))void submit(next);
  };
+ // Only submit after a quiet period: successive disconnected strokes share one answer.
  const finishPathAndCheck=(strokes:Stroke[])=>{
   if(inFlight.current||kind!=='path')return;
   const current=latestState.current;
   if(!current||current.submitting||current.solved)return;
   const next=setStrokes(current,strokes);
-  latestState.current=next;setState(next);setFeedback(null);
-  void submit(next);
+  latestState.current=next;setState(next);setFeedback(null);setError('');
+  pathIdle.current?.schedule();
+ };
+ pathIdleCallback.current=()=>{
+  const snapshot=latestState.current;
+  if(kind!=='path'||drawingRef.current||inFlight.current||!spec||
+   !snapshot||snapshot.submitting||snapshot.solved||!canSubmit(spec,snapshot))return;
+  void submit(snapshot);
+ };
+ const pathDrawingChange=(isDrawing:boolean)=>{
+  drawingRef.current=isDrawing;
+  setDrawing(isDrawing);
+  // Cancel validation as soon as the next finger stroke begins, not on release.
+  if(isDrawing)pathIdle.current?.cancel();
+ };
+ const resetPathAfterError=()=>{
+  pathIdle.current?.cancel();
+  const current=latestState.current;
+  if(!current||current.submitting||current.solved)return;
+  update(value=>setStrokes(value,[]));
+  setError('');setFeedback(null);
  };
  const placePuzzlePiece=async(pieceId:string,x:number,y:number)=>{
   const current=latestState.current;
@@ -187,7 +213,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  case 'choice':return <ChoiceRenderer options={data?.options??[]} selected={state.selected} onSelect={selectChoiceAndCheck} disabled={sending||solved}/>;
  case 'sorting':return <SortingRenderer items={data?.items??[]} order={state.sortOrder} onMove={moveSortAndCheck} disabled={sending||solved}/>;
  case 'matching':return <MatchingRenderer key={`${stageId}:${challengeId}`} sources={data?.collections?.[0]??[]} targets={data?.collections?.[1]??[]} matches={state.matches} onConnect={connectMatchAndCheck} disabled={sending||solved}/>;
- case 'path':return <PathRenderer imageUrl={data?.displayImageUrl} strokes={state.strokes} onChange={(strokes:Stroke[])=>update(s=>setStrokes(s,strokes))} onStrokeEnd={finishPathAndCheck} onDrawingChange={setDrawing} disabled={sending||solved}/>;
+ case 'path':return <PathRenderer imageUrl={data?.displayImageUrl} strokes={state.strokes} onChange={(strokes:Stroke[])=>update(s=>setStrokes(s,strokes))} onStrokeEnd={finishPathAndCheck} onDrawingChange={pathDrawingChange} showReset={Boolean(error)&&state.strokes.length>0} onReset={resetPathAfterError} disabled={sending||solved}/>;
  case 'video':case 'content':return <ContentRenderer text={data?.text||(kind==='content'?mediaText(data?.prompt??spec.prompt):undefined)} imageUrl={data?.imageUrl||((kind==='content'&&!data?.videoUrl)?(data?.displayImageUrl||spec.imageUrl):undefined)} videoUrl={data?.videoUrl} audioUrl={data?.audioUrl} completedMedia={state.completedMedia} onMediaFinished={mediaKind=>update(s=>s.completedMedia.includes(mediaKind)?s:{...s,completedMedia:[...s.completedMedia,mediaKind]})}/>;
  case 'voice':return <VoiceRecorder key={`${stageId}:${challengeId}`} expectedText={data?.expectedText} disabled={sending||solved} onRecorded={submitRecordedVoice} onRecordingChange={value=>update(s=>({...s,recording:value}))}/>;
  default:return <ErrorState title="نوع چالش پشتیبانی نمی‌شود" description={`نوع دریافتی: ${spec.kind}`}/>;
