@@ -32,3 +32,20 @@ test('peer-to-peer only sends a complete, normalized answer to the server',()=>{
   {sourceIndex:0,targetIndex:0},{sourceIndex:1,targetIndex:1},
  ]);
 });
+
+test('path retains disconnected strokes in a single server attempt',()=>{
+ const spec={kind:'Path',data:{}};
+ let state=initialGameState(spec,100);
+ const first={points:[{x:0.1,y:0.2},{x:0.25,y:0.3}]};
+ const second={points:[{x:0.65,y:0.75},{x:0.85,y:0.95}]};
+ state=setStrokes(state,[first]);
+ assert.equal(state.strokes.length,1);
+ state=setStrokes(state,[...state.strokes,second]);
+ assert.equal(state.strokes.length,2);
+ assert.deepEqual(buildAttempt(spec,state,500).answer,[first,second]);
+ const rejected=applyFeedback(state,{isCorrect:false});
+ const cleared=setStrokes(rejected,[]);
+ assert.equal(cleared.strokes.length,0);
+ assert.equal(cleared.mistakes,1);
+ assert.equal(canSubmit(spec,cleared),false);
+});
