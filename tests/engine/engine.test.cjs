@@ -9,3 +9,26 @@ test('path limited and valid',()=>{const spec={kind:'path'};let s=initialGameSta
 test('voice and media gates',()=>{const voice={kind:'voice'};let s=initialGameState(voice,100);assert.equal(canSubmit(voice,s),false);s={...s,voiceRecording:'blob:abc'};assert.equal(canSubmit(voice,s),true);assert.equal(canSubmit({kind:'content',data:{requireMediaCompletion:true,audioUrl:'a'}},s),false);assert.equal(canSubmit({kind:'content'},s),true);});
 test('backend feedback and time clamp',()=>{let s=toggleChoice(initialGameState(choice,100),0,3,true);assert.equal(buildAttempt(choice,s,9000000).timeSpentMilliseconds,3600000);s=applyFeedback(s,{isCorrect:false});assert.equal(s.mistakes,1);s=applyFeedback(s,{isCorrect:true});assert.equal(s.solved,true);assert.equal(canSubmit(choice,s),false);});
 test('next challenge respects completion',()=>{const items=[{challengeId:'a',order:1},{challengeId:'b',order:2,isCompleted:true},{challengeId:'c',order:3}];assert.deepEqual(resolveNextStep('a',1,items,'b','c'),{kind:'challenge',challengeId:'c'});assert.deepEqual(resolveNextStep('c',3,items),{kind:'check-result'});});
+
+test('peer-to-peer only sends a complete, normalized answer to the server',()=>{
+ const spec={kind:'PeerToPeer',data:{collections:[['right-1','right-2'],['left-1','left-2']]}};
+ let state=initialGameState(spec,100);
+ state=connectMatch(state,1,0,2,2);
+ assert.equal(canSubmit(spec,state),false);
+ state=connectMatch(state,0,1,2,2);
+ assert.equal(canSubmit(spec,state),true);
+ assert.deepEqual(buildAttempt(spec,state,300).answer,[
+  {sourceIndex:0,targetIndex:1},{sourceIndex:1,targetIndex:0},
+ ]);
+ // An incorrect response never advances the game or marks it solved.
+ state=applyFeedback(state,{isCorrect:false});
+ assert.equal(state.solved,false);
+ assert.equal(state.mistakes,1);
+ state=connectMatch(state,0,0,2,2);
+ assert.equal(canSubmit(spec,state),false);
+ state=connectMatch(state,1,1,2,2);
+ assert.equal(canSubmit(spec,state),true);
+ assert.deepEqual(buildAttempt(spec,state,400).answer,[
+  {sourceIndex:0,targetIndex:0},{sourceIndex:1,targetIndex:1},
+ ]);
+});
