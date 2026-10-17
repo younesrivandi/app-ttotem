@@ -2,7 +2,8 @@
 export type PuzzlePieceMedia = Readonly<{id:string;imageUrl:string}>;
 export type PuzzleMedia = Readonly<{
  background?:string;
- guide?:string;
+ /** Non-visual answer-region mask. Never display over the puzzle board. */
+ mask?:string;
  pieces:readonly PuzzlePieceMedia[];
  invalidPieces:number;
 }>;
@@ -33,15 +34,16 @@ export function resolvePuzzleUri(input:unknown,apiBaseUrl:string):string|undefin
 export function resolvePuzzleMedia(challenge:unknown,baseUrl:string):PuzzleMedia{
  const detail=record(challenge);
  const data=record(detail.data);
- // The API's full board and optional overlay can be supplied separately.
- const background=resolvePuzzleUri(pick(data,['boardImageUrl','displayImageUrl','imageUrl','backgroundImageUrl','titleImageUrl'])
-  ??pick(detail,['imageUrl','displayImageUrl','boardImageUrl','titleImageUrl'])
+ // Visible artwork and answer-validation mask are distinct resources.
+ // Prefer the display image; a colored mask is NEVER the displayed board.
+ const background=resolvePuzzleUri(pick(data,['displayImageUrl','imageUrl','backgroundImageUrl','boardImageUrl','guideImageUrl','targetImageUrl','templateImageUrl','titleImageUrl'])
+  ??pick(detail,['displayImageUrl','imageUrl','boardImageUrl','titleImageUrl'])
   ??pick(record(data.title),['imageUrl'])
   ??pick(record(data.prompt),['imageUrl'])
   ??pick(record(detail.title),['imageUrl'])
   ??pick(record(detail.prompt),['imageUrl']),baseUrl);
- const guide=resolvePuzzleUri(pick(data,['maskImageUrl','guideImageUrl','targetImageUrl','templateImageUrl'])
-  ??pick(detail,['maskImageUrl','guideImageUrl']),baseUrl);
+ const mask=resolvePuzzleUri(pick(data,['maskImageUrl'])
+  ??pick(detail,['maskImageUrl']),baseUrl);
  const list=pick(data,['pieces','puzzlePieces']);
  const rawPieces=Array.isArray(list)?list:[];
  const seen=new Set<string>();
@@ -56,7 +58,7 @@ export function resolvePuzzleMedia(challenge:unknown,baseUrl:string):PuzzleMedia
   seen.add(id);
   pieces.push({id,imageUrl});
  }
- return {background,guide:guide===background?undefined:guide,pieces,invalidPieces};
+ return {background,mask,pieces,invalidPieces};
 }
 export type BoardSize=Readonly<{width:number;height:number}>;
 export type BoardRect=Readonly<{x:number;y:number;width:number;height:number}>;
