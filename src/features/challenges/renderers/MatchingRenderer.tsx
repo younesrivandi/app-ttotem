@@ -1,8 +1,9 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {PanResponder,Pressable,View,type LayoutChangeEvent} from 'react-native';
+import {Image,PanResponder,Pressable,StyleSheet,View,type LayoutChangeEvent} from 'react-native';
 import Svg,{Circle,Line} from 'react-native-svg';
 import type {Match} from '../engine';
-import {ItemLabel} from './shared';
+import {AudioOption,ItemLabel,objectItem} from './shared';
+import {AppText} from '@/components/ui/AppText';
 import {useAppTheme} from '@/theme/ThemeProvider';
 
 type Side='source'|'target';
@@ -35,6 +36,10 @@ type TileProps={
 /** Keep native tap accessibility while claiming horizontal movement as a drag. */
 function MatchTile(props:TileProps){
  const {colors}=useAppTheme();
+ const media=objectItem(props.value);
+ const imageUrl=typeof media.imageUrl==='string'&&media.imageUrl.trim()?media.imageUrl.trim():undefined;
+ const rawLabel=media.text??media.label??media.title;
+ const label=typeof rawLabel==='string'&&rawLabel.trim()?rawLabel.trim():undefined;
  const latest=useRef(props);
  latest.current=props;
  const pan=useMemo(()=>PanResponder.create({
@@ -55,15 +60,30 @@ function MatchTile(props:TileProps){
  return <View {...pan.panHandlers} onTouchStart={props.onTouchBegin} onLayout={props.onLayout}
   style={{width:'100%',maxWidth:220,aspectRatio:1}}>
   <Pressable accessibilityRole="button"
-   accessibilityLabel={`${props.side==='source'?'آیتم سمت راست':'آیتم سمت چپ'} ${props.index+1}؛ برای اتصال لمس یا به سمت مقابل بکشید`}
+   accessibilityLabel={`${props.side==='source'?'آیتم سمت راست':'آیتم سمت چپ'} ${props.index+1}${label?`، ${label}`:''}؛ برای اتصال لمس یا به سمت مقابل بکشید`}
    accessibilityState={{selected:props.selected,disabled:props.disabled}}
    disabled={props.disabled}
    onPress={()=>props.onTap(props.side,props.index)}
-   style={{flex:1,borderRadius:18,borderWidth:props.selected?3:props.matched?2:1.5,
+   style={{flex:1,borderRadius:18,overflow:'hidden',
+    borderWidth:props.selected?3:props.matched?2:1.5,
     borderColor:props.selected?colors.primary:props.matched?'#52A878':colors.border,
-    backgroundColor:colors.surface,padding:8,
+    backgroundColor:colors.surface,padding:imageUrl?0:8,
     alignItems:'center',justifyContent:'center'}}>
-   <ItemLabel value={props.value} centered/>
+   {imageUrl?<>
+    <Image source={{uri:imageUrl}} resizeMode="cover" accessible={false}
+     style={StyleSheet.absoluteFillObject}/>
+    {label?<View pointerEvents="none" style={{
+     position:'absolute',left:0,right:0,bottom:0,
+     backgroundColor:'rgba(0,0,0,0.62)',
+     paddingHorizontal:8,paddingVertical:8,
+     justifyContent:'center',alignItems:'center'}}>
+     <AppText numberOfLines={2} weight="700"
+      style={{textAlign:'center',color:'#FFFFFF',width:'100%'}}>{label}</AppText>
+    </View>:null}
+    {media.audioUrl?<View style={{position:'absolute',left:6,top:6}}>
+     <AudioOption uri={media.audioUrl}/>
+    </View>:null}
+   </>:<ItemLabel value={props.value} centered/>}
   </Pressable>
  </View>;
 }
