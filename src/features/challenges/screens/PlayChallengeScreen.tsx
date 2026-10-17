@@ -64,7 +64,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      queryClient.invalidateQueries({queryKey:['child',childId,'stages',stageId,'result']}),
      queryClient.invalidateQueries({queryKey:queryKeys.journeys(childId)}),
     ]);
-    if(kind==='sorting'||kind==='path'||kind==='voice'||kind==='choice') await proceed(response.nextChallengeId);
+    if(kind==='sorting'||kind==='path'||kind==='voice'||kind==='choice'||kind==='matching') await proceed(response.nextChallengeId);
    }
   }catch(e){
    setError(message(e));
@@ -94,6 +94,23 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
   setState(next);
   setFeedback(null);
   void submit(next);
+ };
+ const connectMatchAndCheck=(sourceIndex:number,targetIndex:number)=>{
+  if(inFlight.current||kind!=='matching'||!spec)return;
+  const current=latestState.current;
+  if(!current||current.submitting||current.solved)return;
+  // Tapping an already-connected pair is not a new answer.
+  if(current.matches.some(match=>match.sourceIndex===sourceIndex&&match.targetIndex===targetIndex))return;
+  const sourceCount=spec.data?.collections?.[0]?.length??0;
+  const targetCount=spec.data?.collections?.[1]?.length??0;
+  const next=connectMatch(current,sourceIndex,targetIndex,sourceCount,targetCount);
+  if(next===current)return;
+  latestState.current=next;
+  setState(next);
+  setFeedback(null);
+  setError('');
+  // Only a complete set is checked; the backend owns correctness and progression.
+  if(canSubmit(spec,next))void submit(next);
  };
  const finishPathAndCheck=(strokes:Stroke[])=>{
   if(inFlight.current||kind!=='path')return;
@@ -163,7 +180,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  case 'puzzle':return <PuzzleRenderer pieces={data?.pieces??[]} boardImageUrl={data?.boardImageUrl??data?.maskImageUrl} placements={placements} disabled={sending||solved} onDrop={placePuzzlePiece}/>;
  case 'choice':return <ChoiceRenderer options={data?.options??[]} selected={state.selected} onSelect={selectChoiceAndCheck} disabled={sending||solved}/>;
  case 'sorting':return <SortingRenderer items={data?.items??[]} order={state.sortOrder} onMove={moveSortAndCheck} disabled={sending||solved}/>;
- case 'matching':return <MatchingRenderer sources={data?.collections?.[0]??[]} targets={data?.collections?.[1]??[]} matches={state.matches} onConnect={(i,j)=>update(s=>connectMatch(s,i,j,data?.collections?.[0]?.length??0,data?.collections?.[1]?.length??0))} disabled={sending||solved}/>;
+ case 'matching':return <MatchingRenderer key={`${stageId}:${challengeId}`} sources={data?.collections?.[0]??[]} targets={data?.collections?.[1]??[]} matches={state.matches} onConnect={connectMatchAndCheck} disabled={sending||solved}/>;
  case 'path':return <PathRenderer imageUrl={data?.displayImageUrl} strokes={state.strokes} onChange={(strokes:Stroke[])=>update(s=>setStrokes(s,strokes))} onStrokeEnd={finishPathAndCheck} onDrawingChange={setDrawing} disabled={sending||solved}/>;
  case 'video':case 'content':return <ContentRenderer text={data?.text} imageUrl={data?.imageUrl} videoUrl={data?.videoUrl} audioUrl={data?.audioUrl} completedMedia={state.completedMedia} onMediaFinished={mediaKind=>update(s=>s.completedMedia.includes(mediaKind)?s:{...s,completedMedia:[...s.completedMedia,mediaKind]})}/>;
  case 'voice':return <VoiceRecorder key={`${stageId}:${challengeId}`} expectedText={data?.expectedText} disabled={sending||solved} onRecorded={submitRecordedVoice} onRecordingChange={value=>update(s=>({...s,recording:value}))}/>;
@@ -246,7 +263,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
     backgroundColor:'#38264F',borderRadius:16,paddingHorizontal:18,paddingVertical:14,
     shadowColor:'#241632',shadowOpacity:0.3,shadowRadius:12,
    }}><AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:14}}>{toast}</AppText></View>}
-   {spec&&state&&enabled&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'&&kind!=='choice'&&<View style={{paddingVertical:fullScreenContent?0:12,borderTopWidth:fullScreenContent?0:1,borderTopColor:'#EDE6F7'}}>
+   {spec&&state&&enabled&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'&&kind!=='choice'&&kind!=='matching'&&<View style={{paddingVertical:fullScreenContent?0:12,borderTopWidth:fullScreenContent?0:1,borderTopColor:'#EDE6F7'}}>
      {feedback?.isCorrect?
        <Pressable accessibilityRole="button" onPress={()=>{void proceed(feedback.nextChallengeId).catch(e=>setError(message(e)));}}
          style={{height:52,borderRadius:fullScreenContent?0:15,backgroundColor:'#764EB2',justifyContent:'center',alignItems:'center'}}>
