@@ -183,7 +183,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  const puzzleMedia=resolvePuzzleMedia(spec,API_BASE_URL);
  const data=spec?.data;
  const renderer=(()=>{if(!state||!spec)return null;switch(kind){
- case 'puzzle':return <PuzzleRenderer pieces={puzzleMedia.pieces} background={puzzleMedia.background} guide={puzzleMedia.guide} invalidPieces={puzzleMedia.invalidPieces} placements={placements} disabled={sending||solved} onDrop={placePuzzlePiece}/>;
+ case 'puzzle':return <PuzzleRenderer pieces={puzzleMedia.pieces} background={puzzleMedia.background} guide={puzzleMedia.guide} invalidPieces={puzzleMedia.invalidPieces} onRetryImages={()=>{void challenge.refetch();}} placements={placements} disabled={sending||solved} onDrop={placePuzzlePiece}/>;
  case 'choice':return <ChoiceRenderer options={data?.options??[]} selected={state.selected} onSelect={selectChoiceAndCheck} disabled={sending||solved}/>;
  case 'sorting':return <SortingRenderer items={data?.items??[]} order={state.sortOrder} onMove={moveSortAndCheck} disabled={sending||solved}/>;
  case 'matching':return <MatchingRenderer key={`${stageId}:${challengeId}`} sources={data?.collections?.[0]??[]} targets={data?.collections?.[1]??[]} matches={state.matches} onConnect={connectMatchAndCheck} disabled={sending||solved}/>;
