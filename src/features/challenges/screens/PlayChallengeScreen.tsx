@@ -178,7 +178,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  };
  const data=spec?.data;
  const renderer=(()=>{if(!state||!spec)return null;switch(kind){
- case 'puzzle':return <PuzzleRenderer pieces={data?.pieces??[]} boardImageUrl={data?.boardImageUrl??data?.maskImageUrl} placements={placements} disabled={sending||solved} onDrop={placePuzzlePiece}/>;
+ case 'puzzle':return <PuzzleRenderer pieces={data?.pieces??[]} boardImageUrl={data?.boardImageUrl||data?.displayImageUrl||data?.imageUrl||spec.imageUrl} maskImageUrl={data?.maskImageUrl} placements={placements} disabled={sending||solved} onDrop={placePuzzlePiece}/>;
  case 'choice':return <ChoiceRenderer options={data?.options??[]} selected={state.selected} onSelect={selectChoiceAndCheck} disabled={sending||solved}/>;
  case 'sorting':return <SortingRenderer items={data?.items??[]} order={state.sortOrder} onMove={moveSortAndCheck} disabled={sending||solved}/>;
  case 'matching':return <MatchingRenderer key={`${stageId}:${challengeId}`} sources={data?.collections?.[0]??[]} targets={data?.collections?.[1]??[]} matches={state.matches} onConnect={connectMatchAndCheck} disabled={sending||solved}/>;
