@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image, ImageBackground, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/AsyncState';
@@ -12,7 +12,7 @@ import { queryKeys } from '@/services/api/queryKeys';
 import { listJourneys } from '@/features/journeys/api/journeysApi';
 import { getJourneyStages } from '../api/stagesApi';
 import { tabArtwork } from '@/components/navigation/tabArtwork';
-import { completed, isJourneyStageLocked, resetStoryRun, stageStars } from '../model/stages';
+import { completed, isJourneyStageLocked, stageStars } from '../model/stages';
 
 const message = (e: unknown) => e instanceof Error ? e.message : 'خطای ناشناخته';
 const stageArtwork = require('../../../../assets/image/item.png');
@@ -23,6 +23,7 @@ const BOTTOM_SPACER = 154;
 
 export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const mapWidth = Math.max(250, Math.min(width - 36, 430 - 36));
@@ -59,6 +60,16 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
     () => [...(stagesQuery.data?.stages ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [stagesQuery.data?.stages],
   );
+  // Refresh the server's stage progress whenever the map is revisited.
+  // Avoid restarting a request that is already fetching on first mount.
+  useFocusEffect(useCallback(() => {
+    if (!authorized || !journeyId || !childId) return;
+    const key = queryKeys.stages(childId, journeyId);
+    if (queryClient.getQueryState(key)?.dataUpdatedAt) {
+      void queryClient.invalidateQueries({queryKey:key});
+    }
+  }, [authorized, childId, journeyId, queryClient]));
+
   const journey = journeysQuery.data?.find(item => item.journeyId === journeyId);
   const title = journey?.name ?? stagesQuery.data?.journeyName ?? 'دنیای من';
   const backgroundUrl = stagesQuery.data?.backgroundUrl ??
@@ -94,7 +105,7 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
         strokeLinecap="round" fill="none" opacity={0.96} />
     </Svg>
     {stages.map((stage, index) => {
-      const locked = isJourneyStageLocked(stage, index, stages, childId, journeyId);
+      const locked = isJourneyStageLocked(stage, index, stages);
       const finished = completed(stage);
       const titleText = stage.title ?? `مرحله ${index + 1}`;
       return <Pressable key={stage.stageId} disabled={locked}
@@ -144,7 +155,7 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
         alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18 }}>
         <AppText weight="700" numberOfLines={1} style={{ fontSize: 16, flex: 1, color: '#28356A' }}>{title}</AppText>
         <Pressable accessibilityRole="button" accessibilityLabel="بازگشت به سفرها"
-          onPress={() => { resetStoryRun(childId, journeyId); router.replace('/journeys'); }}
+          onPress={() => router.replace('/journeys')}
           style={{ width: 35, height: 35, backgroundColor: '#FFFFFF', borderRadius: 11,
             justifyContent: 'center', alignItems: 'center', marginLeft: 12,
             borderColor: '#EEE2D3', borderWidth: 1 }}>
@@ -235,7 +246,7 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
             ] as const).map(item =>
               <Pressable key={item.key} accessibilityRole="button"
                 accessibilityLabel={item.key === 'home' ? 'خانه' : item.key === 'trophy' ? 'رتبه‌بندی' : 'بخش والدین'}
-                onPress={() => { resetStoryRun(childId, journeyId); router.replace(item.href); }}
+                onPress={() => router.replace(item.href)}
                 style={{ width: 64, height: 60, justifyContent: 'center', alignItems: 'center' }}>
                 <Image source={{ uri: tabArtwork[item.key] }} resizeMode="contain"
                   style={{ width: 44, height: 44 }} />
