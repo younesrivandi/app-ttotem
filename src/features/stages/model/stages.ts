@@ -4,7 +4,7 @@ export const progressSchema=z.object({status:z.string().nullish(),stars:z.coerce
 export const stageSchema=z.object({stageId:identifier,title:z.string().nullish(),order:z.number().nullish(),type:z.string().nullish(),isLocked:z.boolean().nullish(),thumbnailUrl:z.string().nullish(),imageUrl:z.string().nullish(),iconUrl:z.string().nullish(),progress:progressSchema.nullish()}).passthrough();
 export const stagesResponseSchema=z.object({stages:z.array(stageSchema),journeyName:z.string().nullish(),backgroundUrl:z.string().nullish(),journeyBackgroundUrl:z.string().nullish()}).passthrough();
 export type Stage=z.infer<typeof stageSchema>;
-export function completed(stage:Stage){return stage.progress?.status?.toLowerCase()==='completed';}
+export function completed(stage:Stage){return stage.progress?.status?.trim().toLowerCase()==='completed';}
 /**
  * Stage access must come from server-provided progress, never a temporary
  * in-memory Story run. Previously reached stages remain available on return.
