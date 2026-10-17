@@ -8,7 +8,7 @@ export function objectItem(v:unknown):Item {
  if(typeof v==='object'&&v!==null)return v as Item;
  return {text:'—'};
 }
-function AudioOption({uri}:{uri:string}){
+export function AudioOption({uri}:{uri:string}){
  const player=useAudioPlayer(uri);
  const status=useAudioPlayerStatus(player);
  return <Pressable accessibilityRole="button" accessibilityLabel={status.playing?'مکث صدای گزینه':'پخش صدای گزینه'}
