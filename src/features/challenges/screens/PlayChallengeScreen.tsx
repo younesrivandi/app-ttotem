@@ -169,13 +169,14 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  case 'voice':return <VoiceRecorder key={`${stageId}:${challengeId}`} expectedText={data?.expectedText} disabled={sending||solved} onRecorded={submitRecordedVoice} onRecordingChange={value=>update(s=>({...s,recording:value}))}/>;
  default:return <ErrorState title="نوع چالش پشتیبانی نمی‌شود" description={`نوع دریافتی: ${spec.kind}`}/>;
  }})();
+ const fullScreenContent=kind==='content'||kind==='video';
  const orderedChallenges=[...(summary.data?.challenges??[])].sort((a,b)=>(a.order??0)-(b.order??0));
  const challengeIndex=orderedChallenges.findIndex(item=>item.challengeId===challengeId);
  const challengeNumber=challengeIndex>=0?challengeIndex+1:1;
  const challengeTotal=orderedChallenges.length;
  return <SafeAreaView edges={['top','bottom','left','right']} style={{flex:1,backgroundColor:'#F9F6FE'}}>
- <View style={{flex:1,width:'100%',maxWidth:880,alignSelf:'center',paddingHorizontal:16,paddingTop:16}}>
-  <View style={{flexDirection:'row',alignItems:'center',gap:10,marginBottom:6}}>
+ <View style={{flex:1,width:'100%',maxWidth:fullScreenContent?undefined:880,alignSelf:'center',paddingHorizontal:fullScreenContent?0:16,paddingTop:fullScreenContent?0:16}}>
+  <View style={{flexDirection:'row',alignItems:'center',gap:10,marginBottom:fullScreenContent?0:6,paddingHorizontal:fullScreenContent?12:0,paddingVertical:fullScreenContent?8:0}}>
    <Pressable accessibilityRole="button" accessibilityLabel="بازگشت به چالش‌ها"
     onPress={()=>router.replace({pathname:'/stages/[stageId]',params:{stageId}})}
     style={{width:36,height:36,borderRadius:12,backgroundColor:'#FFFFFF',
@@ -214,9 +215,20 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
    imageUrl={spec.imageUrl}
    audioUrl={undefined}
   />}
-   <ScrollView keyboardShouldPersistTaps="handled" scrollEnabled={!drawing} style={{flex:1}}
-     contentContainerStyle={{gap:spacing.md,paddingTop:kind==='content'||kind==='video'?0:12,paddingBottom:kind==='content'||kind==='video'?8:24}}
-     nestedScrollEnabled>
+   {fullScreenContent?
+     <View style={{flex:1,minHeight:0,width:'100%'}}>     {!ready?<LoadingState title="بررسی نشست کودک…"/>:
+     !enabled?<ErrorState title="ابتدا پروفایل کودک را انتخاب کنید" onRetry={()=>router.replace('/children')}/>:
+     loading?<LoadingState title="دریافت بازی…"/>:
+     challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:
+     spec&&state?<>{renderer}
+      {feedback&&!feedback.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'&&kind!=='choice'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
+      {feedback?.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='content'&&kind!=='video'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
+      {error?<AppText tone="error">{error}</AppText>:null}
+     </>:null}
+
+     </View>:
+     <ScrollView keyboardShouldPersistTaps="handled" scrollEnabled={!drawing} style={{flex:1}}
+       contentContainerStyle={{gap:spacing.md,paddingTop:12,paddingBottom:24}} nestedScrollEnabled>
      {!ready?<LoadingState title="بررسی نشست کودک…"/>:
      !enabled?<ErrorState title="ابتدا پروفایل کودک را انتخاب کنید" onRetry={()=>router.replace('/children')}/>:
      loading?<LoadingState title="دریافت بازی…"/>:
@@ -226,7 +238,8 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
       {feedback?.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='content'&&kind!=='video'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
       {error?<AppText tone="error">{error}</AppText>:null}
      </>:null}
-   </ScrollView>
+
+     </ScrollView>}
    {!!toast&&<View pointerEvents="none" accessibilityRole="alert" style={{
     position:'absolute',left:20,right:20,bottom:28,zIndex:50,elevation:20,
     backgroundColor:'#38264F',borderRadius:16,paddingHorizontal:18,paddingVertical:14,
