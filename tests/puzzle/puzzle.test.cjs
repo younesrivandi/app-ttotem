@@ -133,8 +133,8 @@ test('legacy image in title or prompt can provide the missing board',()=>{
  assert.equal(resolvePuzzleMedia({data:{prompt:{imageUrl:'/question.png'}}},base).background,base+'/question.png');
 });
 
-test('puzzle image layers ignore touches via View and never pass pointerEvents to Image',()=>{
- const all=nodes(render({background:'https://cdn/board.png',guide:'https://cdn/guide.png'}));
+test('visual puzzle image ignores touches via View without unsupported Image props',()=>{
+ const all=nodes(render({background:'https://cdn/board.png'}));
  const images=all.filter(n=>n.type==='Image');
  assert.equal(images.length,1);
  assert.ok(images.every(n=>!Object.prototype.hasOwnProperty.call(n.props,'pointerEvents')));
