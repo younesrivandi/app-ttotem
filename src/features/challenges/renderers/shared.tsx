@@ -19,12 +19,13 @@ function AudioOption({uri}:{uri:string}){
   <AppText weight="700" style={{color:'#6842A2',fontSize:12}}>{status.playing?'⏸ مکث':'🔊 پخش صدا'}</AppText>
  </Pressable>;
 }
-export function ItemLabel({value}:{value:unknown}){
+export function ItemLabel({value,centered=false}:{value:unknown;centered?:boolean}){
  const v=objectItem(value);
  const label=v.text??v.label??v.title;
- return <View style={{flexDirection:'row-reverse',alignItems:'center',gap:10,flex:1,flexWrap:'wrap'}}>
+ return <View style={{flexDirection:'row-reverse',alignItems:'center',gap:10,flex:1,flexWrap:'wrap',
+  ...(centered?{width:'100%' as const,justifyContent:'center' as const,alignContent:'center' as const}: {})}}>
   {!!v.imageUrl&&<Image source={{uri:v.imageUrl}} style={{width:68,height:68,borderRadius:8}} resizeMode="contain"/>}
-  {!!label&&<AppText style={{flexShrink:1}}>{label}</AppText>}
+  {!!label&&<AppText style={{flexShrink:1,...(centered?{textAlign:'center' as const}: {})}}>{label}</AppText>}
   {!!v.audioUrl&&<AudioOption key={v.audioUrl} uri={v.audioUrl}/>}
   {!label&&!v.imageUrl&&!v.audioUrl&&<AppText tone="muted">گزینه</AppText>}
  </View>;
