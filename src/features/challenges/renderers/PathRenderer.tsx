@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
-import { Image, PanResponder, View, type GestureResponderEvent } from 'react-native';
-import Svg, { Polyline } from 'react-native-svg';
+import { Image, PanResponder, Pressable, View, type GestureResponderEvent } from 'react-native';
+import Svg, { Path, Polyline } from 'react-native-svg';
 import type { Point, Stroke } from '../engine';
-import { AppButton } from '@/components/ui/AppButton';
+
 import { useAppTheme } from '@/theme/ThemeProvider';
 
 const MAX_POINTS = 4000;
@@ -13,10 +13,13 @@ type Props = {
  onChange: (value: Stroke[]) => void;
  onStrokeEnd?: (value: Stroke[]) => void;
  onDrawingChange?: (drawing: boolean) => void;
+ /** Only shown after a failed network/backend request, not after a wrong answer. */
+ showReset?: boolean;
+ onReset?: () => void;
  disabled?: boolean;
 };
 
-export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, onDrawingChange, disabled = false }: Props) {
+export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, onDrawingChange, showReset=false, onReset, disabled = false }: Props) {
  const { colors } = useAppTheme();
  const active = useRef<Point[]>([]);
  const [preview, setPreview] = useState<Point[]>([]);
@@ -82,7 +85,8 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, onDrawi
    const points = active.current;
    if (points.length >= 2 && !disabledRef.current) {
     const next = [...saved.current, { points: [...points] }];
-    // A completed stroke is handled exactly once; the parent owns validation.
+    // Preserve the full collection of strokes until a quiet-period check.
+    saved.current = next;
     if (finish.current) finish.current(next);
     else change.current(next);
    }
@@ -115,7 +119,18 @@ export function PathRenderer({ imageUrl, strokes, onChange, onStrokeEnd, onDrawi
     </Svg>
    </View>
   </View>
-  <AppButton title="پاک کردن مسیر" variant="secondary" onPress={() => onChange([])}
-   disabled={disabled || strokes.length === 0} />
+  {showReset&&onReset&&!disabled?<Pressable
+   accessibilityRole="button" accessibilityLabel="رسم دوباره مسیر"
+   onPress={onReset}
+   style={{width:42,height:42,alignSelf:'flex-end',borderRadius:21,
+    backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,
+    justifyContent:'center',alignItems:'center'}}>
+   <Svg width={22} height={22} viewBox="0 0 24 24">
+    <Path d="M3 12a9 9 0 1 0 2.64-6.36L3 8" fill="none"
+     stroke={colors.primary} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+    <Path d="M3 3v5h5" fill="none" stroke={colors.primary}
+     strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+   </Svg>
+  </Pressable>:null}
  </View>;
 }
