@@ -14,6 +14,7 @@ export function VideoContent({uri,onFinish,fill=false}:Props){
  const [position,setPosition]=useState(0);
  const [duration,setDuration]=useState(0);
  const holdRef=useRef<HoldMode|null>(null);
+ const activeRef=useRef(true);
  const shouldResume=useRef(false);
  const rewindTimer=useRef<ReturnType<typeof setInterval>|null>(null);
  const finishRef=useRef(onFinish);
@@ -24,9 +25,9 @@ export function VideoContent({uri,onFinish,fill=false}:Props){
  useEventListener(player,'timeUpdate',e=>setPosition(e.currentTime));
  useEventListener(player,'sourceLoad',e=>setDuration(e.duration));
  // The hook owns the native player lifecycle. Never invoke native methods during teardown.
- useEffect(()=>()=>{if(rewindTimer.current){clearInterval(rewindTimer.current);rewindTimer.current=null;}},[]);
+ useEffect(()=>{activeRef.current=true;return()=>{activeRef.current=false;if(rewindTimer.current){clearInterval(rewindTimer.current);rewindTimer.current=null;}};},[]);
  const startHold=(mode:HoldMode)=>{
-  if(holdRef.current)return;
+  if(!activeRef.current||holdRef.current)return;
   holdRef.current=mode;setHolding(mode);
   if(mode==='center'){
    shouldResume.current=player.playing;
@@ -39,20 +40,20 @@ export function VideoContent({uri,onFinish,fill=false}:Props){
    if(mode==='forward'){player.playbackRate=2;player.play();}
    else {
     player.pause();
-    rewindTimer.current=setInterval(()=>{player.currentTime=Math.max(0,player.currentTime-1);},250);
+    rewindTimer.current=setInterval(()=>{if(activeRef.current)player.currentTime=Math.max(0,player.currentTime-1);},250);
    }
   }
  };
  const endHold=()=>{
   const mode=holdRef.current;
-  if(!mode)return;
+  if(!activeRef.current||!mode)return;
   holdRef.current=null;setHolding(null);
   if(rewindTimer.current){clearInterval(rewindTimer.current);rewindTimer.current=null;}
   player.playbackRate=1;
   if(shouldResume.current)player.play();
   else player.pause();
  };
- const toggle=()=>{if(player.playing)player.pause();else player.play();};
+ const toggle=()=>{if(!activeRef.current)return;if(player.playing)player.pause();else player.play();};
  const time=(seconds:number)=>{const n=Math.max(0,Math.floor(seconds));return `${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`;};
  return <View style={fill?{flex:1,width:'100%',minHeight:0,backgroundColor:'#100B20'}:{width:'100%',aspectRatio:16/9,backgroundColor:'#100B20'}}>
   <VideoView player={player} style={{width:'100%',height:'100%'}} nativeControls={false} playsInline contentFit="contain" />
