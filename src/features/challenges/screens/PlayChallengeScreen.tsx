@@ -216,7 +216,8 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
    audioUrl={undefined}
   />}
    {fullScreenContent?
-     <View style={{flex:1,minHeight:0,width:'100%'}}>     {!ready?<LoadingState title="بررسی نشست کودک…"/>:
+     <View style={{flex:1,minHeight:0,width:'100%'}}>
+     {!ready?<LoadingState title="بررسی نشست کودک…"/>:
      !enabled?<ErrorState title="ابتدا پروفایل کودک را انتخاب کنید" onRetry={()=>router.replace('/children')}/>:
      loading?<LoadingState title="دریافت بازی…"/>:
      challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:
