@@ -12,6 +12,7 @@ type Props={
  placements:Record<string,PuzzlePlacement>;
  disabled:boolean;
  onDrop:(pieceId:string,x:number,y:number)=>void;
+ onRetryImages?:()=>void;
 };
 
 function DraggablePiece({piece,disabled,selected,onSelect,onDrop}:{
@@ -56,7 +57,7 @@ function DraggablePiece({piece,disabled,selected,onSelect,onDrop}:{
 }
 
 /** The board is sized to the loaded guide image, not a fixed white square. */
-export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placements,disabled,onDrop}:Props){
+export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placements,disabled,onDrop,onRetryImages}:Props){
  const {height:windowHeight}=useWindowDimensions();
  const boardRef=useRef<NativeView>(null);
  const live=useRef(true);
@@ -166,7 +167,7 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
   </View>}
   {allFailed||primaryFailed?<View style={{gap:8,alignItems:'center'}}>
    <AppText tone="error" style={{textAlign:'center'}}>بارگذاری تصویر راهنمای پازل ناموفق بود. آدرس یا مجوز دسترسی تصویر را بررسی کنید.</AppText>
-   <Pressable accessibilityRole="button" onPress={()=>setRetry(n=>n+1)} style={{padding:10,borderRadius:10,backgroundColor:'#EEE5F5'}}>
+   <Pressable accessibilityRole="button" onPress={()=>{setRetry(n=>n+1);onRetryImages?.();}} style={{padding:10,borderRadius:10,backgroundColor:'#EEE5F5'}}>
     <AppText weight="700" style={{textAlign:'center'}}>تلاش مجدد تصویر</AppText>
    </Pressable>
   </View>:null}
