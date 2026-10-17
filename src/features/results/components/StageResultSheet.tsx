@@ -29,7 +29,6 @@ export function StageResultSheet({stageId,childId,open,onClose,onContinue,onRepl
     <AppButton title="ادامه مسیر" fullWidth onPress={onContinue}/>
     <AppButton title="دوباره بازی کن" variant="outline" fullWidth onPress={onReplay}/>
    </>:null}
-   <AppButton title="بستن" variant="ghost" onPress={()=>ref.current?.dismiss()}/>
   </View>
  </AppSheet>;
 }
