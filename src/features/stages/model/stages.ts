@@ -17,7 +17,8 @@ export function isStageLocked(stage:Stage,index:number,stages:readonly Stage[]):
   ||stage.progress?.allowResume===true;
  // Completion/resume and completed predecessor are stronger evidence than a
  // possibly stale isLocked flag in the same response.
- if(hasProgress||completed(stage)||completed(stages[index-1]!))return false;
+ const previous=stages[index-1];
+ if(hasProgress||completed(stage)||(previous&&completed(previous)))return false;
  if(stage.isLocked===false)return false;
  return true;
 }
