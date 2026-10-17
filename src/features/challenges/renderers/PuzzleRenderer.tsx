@@ -7,7 +7,6 @@ import {fitPuzzleBoard,normalizePuzzleDrop} from './puzzleModel';
 type Props={
  pieces:readonly PuzzlePiece[];
  background?:string;
- guide?:string;
  invalidPieces?:number;
  placements:Record<string,PuzzlePlacement>;
  disabled:boolean;
@@ -56,8 +55,8 @@ function DraggablePiece({piece,disabled,selected,onSelect,onDrop}:{
  </Animated.View>;
 }
 
-/** The board is sized to the loaded guide image, not a fixed white square. */
-export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placements,disabled,onDrop,onRetryImages}:Props){
+/** Show only the child's visual board. A colored answer mask must never be rendered. */
+export function PuzzleRenderer({pieces,background,invalidPieces=0,placements,disabled,onDrop,onRetryImages}:Props){
  const {height:windowHeight}=useWindowDimensions();
  const boardRef=useRef<NativeView>(null);
  const live=useRef(true);
@@ -68,9 +67,7 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
  const loadedRef=useRef<string[]>([]);
  const [retry,setRetry]=useState(0);
  const [chosen,setChosen]=useState<string|null>(null);
- const images=[background,guide].filter((url):url is string=>!!url);
- const uniqueImages=[...new Set(images)];
- const primary=guide??background;
+ const primary=background;
  const maxHeight=Math.max(190,windowHeight*0.56);
  const frame=fitPuzzleBoard(containerWidth,maxHeight,ratio);
  const canPlace=!!primary&&loaded.includes(primary)&&!disabled;
@@ -87,7 +84,7 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
    if(active&&primary&&!loadedRef.current.includes(primary))
     setFailed(previous=>previous.includes(primary)?previous:[...previous,primary]);
   },15000);
-  const candidates=[primary,background].filter((url):url is string=>!!url);
+  const candidates=[background].filter((url):url is string=>!!url);
   const getRatio=(i:number)=>{
    if(i>=candidates.length)return;
    Image.getSize(candidates[i]!, (width,height)=>{
@@ -126,8 +123,7 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
   onDrop(chosen,point.x,point.y);
   setChosen(null);
  };
- const missing=uniqueImages.length===0;
- const allFailed=!missing&&uniqueImages.every(url=>failed.includes(url));
+ const missing=!background;
  const primaryFailed=!!primary&&failed.includes(primary);
  const available=pieces.filter(piece=>!placements[piece.id]);
  return <View style={{gap:14,width:'100%'}} onLayout={event=>{
@@ -148,11 +144,6 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
      style={{position:'absolute',left:0,right:0,top:0,bottom:0,width:'100%',height:'100%'}}
      onLoad={event=>markLoaded(background,event.nativeEvent.source?.width??0,event.nativeEvent.source?.height??0)}
      onError={()=>markFailed(background)}/>}
-    {!!guide&&<Image key={`guide:${guide}:${retry}`} source={{uri:guide}}
-     resizeMode="contain"
-     style={{position:'absolute',left:0,right:0,top:0,bottom:0,width:'100%',height:'100%'}}
-     onLoad={event=>markLoaded(guide,event.nativeEvent.source?.width??0,event.nativeEvent.source?.height??0)}
-     onError={()=>markFailed(guide)}/>}
     {Object.values(placements).map(placement=>{
      const piece=pieces.find(candidate=>candidate.id===placement.pieceId);
      if(!piece)return null;
@@ -162,12 +153,12 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
        top:placement.y*frame.height-h/2,width:w,height:h}}/>;
     })}
     </View>
-    {!canPlace&&!allFailed&&!primaryFailed?<View pointerEvents="none" style={{flex:1,justifyContent:'center',alignItems:'center'}}>
+    {!canPlace&&!primaryFailed?<View pointerEvents="none" style={{flex:1,justifyContent:'center',alignItems:'center'}}>
      <AppText tone="muted" style={{textAlign:'center'}}>در حال بارگذاری تصویر پازل…</AppText>
     </View>:null}
    </Pressable>
   </View>}
-  {allFailed||primaryFailed?<View style={{gap:8,alignItems:'center'}}>
+  {primaryFailed?<View style={{gap:8,alignItems:'center'}}>
    <AppText tone="error" style={{textAlign:'center'}}>بارگذاری تصویر راهنمای پازل ناموفق بود. آدرس یا مجوز دسترسی تصویر را بررسی کنید.</AppText>
    <Pressable accessibilityRole="button" onPress={()=>{setRetry(n=>n+1);onRetryImages?.();}} style={{padding:10,borderRadius:10,backgroundColor:'#EEE5F5'}}>
     <AppText weight="700" style={{textAlign:'center'}}>تلاش مجدد تصویر</AppText>
