@@ -142,13 +142,14 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
     accessibilityRole="button" accessibilityLabel="محل قراردادن قطعه انتخاب‌شده روی صفحه پازل"
     style={{width:frame.width||'100%',height:frame.height||240,aspectRatio:frame.width?undefined:ratio,
      overflow:'hidden',borderRadius:20,borderWidth:1,borderColor:'#E7DDF3',backgroundColor:'#FFFFFF'}}>
+    <View pointerEvents="none" style={{position:"absolute",top:0,right:0,bottom:0,left:0}}>
     {!!background&&<Image key={`board:${background}:${retry}`} source={{uri:background}}
-     resizeMode="contain" pointerEvents="none"
+     resizeMode="contain"
      style={{position:'absolute',left:0,right:0,top:0,bottom:0,width:'100%',height:'100%'}}
      onLoad={event=>markLoaded(background,event.nativeEvent.source?.width??0,event.nativeEvent.source?.height??0)}
      onError={()=>markFailed(background)}/>}
     {!!guide&&<Image key={`guide:${guide}:${retry}`} source={{uri:guide}}
-     resizeMode="contain" pointerEvents="none"
+     resizeMode="contain"
      style={{position:'absolute',left:0,right:0,top:0,bottom:0,width:'100%',height:'100%'}}
      onLoad={event=>markLoaded(guide,event.nativeEvent.source?.width??0,event.nativeEvent.source?.height??0)}
      onError={()=>markFailed(guide)}/>}
@@ -156,10 +157,11 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
      const piece=pieces.find(candidate=>candidate.id===placement.pieceId);
      if(!piece)return null;
      const w=placement.width*frame.width,h=placement.height*frame.height;
-     return <Image key={placement.pieceId} source={{uri:piece.imageUrl}} pointerEvents="none"
+     return <Image key={placement.pieceId} source={{uri:piece.imageUrl}}
       resizeMode="contain" style={{position:'absolute',left:placement.x*frame.width-w/2,
        top:placement.y*frame.height-h/2,width:w,height:h}}/>;
     })}
+    </View>
     {!canPlace&&!allFailed&&!primaryFailed?<View pointerEvents="none" style={{flex:1,justifyContent:'center',alignItems:'center'}}>
      <AppText tone="muted" style={{textAlign:'center'}}>در حال بارگذاری تصویر پازل…</AppText>
     </View>:null}
