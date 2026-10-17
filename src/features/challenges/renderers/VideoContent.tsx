@@ -8,7 +8,7 @@ type Props={uri:string;completed:boolean;onFinish:()=>void;fill?:boolean};
 type HoldMode='center'|'back'|'forward';
 /** Native expo-video playback with touch-friendly press-and-hold controls. */
 export function VideoContent({uri,onFinish,fill=false}:Props){
- const player=useVideoPlayer(uri,p=>{p.loop=false;p.timeUpdateEventInterval=0.5;});
+ const player=useVideoPlayer(uri,p=>{p.loop=false;p.timeUpdateEventInterval=0.5;p.play();});
  const [playing,setPlaying]=useState(false);
  const [holding,setHolding]=useState<HoldMode|null>(null);
  const [position,setPosition]=useState(0);
@@ -23,8 +23,8 @@ export function VideoContent({uri,onFinish,fill=false}:Props){
  useEventListener(player,'playingChange',e=>setPlaying(e.isPlaying));
  useEventListener(player,'timeUpdate',e=>setPosition(e.currentTime));
  useEventListener(player,'sourceLoad',e=>setDuration(e.duration));
- // Native autoplay works without interaction; browsers may block autoplay with sound.
- useEffect(()=>{try{player.play();}catch{/* Browser autoplay policy can require a tap. */}return()=>{if(rewindTimer.current)clearInterval(rewindTimer.current);player.pause();player.playbackRate=1;};},[player]);
+ // The hook owns the native player lifecycle. Never invoke native methods during teardown.
+ useEffect(()=>()=>{if(rewindTimer.current){clearInterval(rewindTimer.current);rewindTimer.current=null;}},[]);
  const startHold=(mode:HoldMode)=>{
   if(holdRef.current)return;
   holdRef.current=mode;setHolding(mode);
