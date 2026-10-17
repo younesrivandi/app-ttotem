@@ -169,7 +169,7 @@ export function MatchingRenderer({sources,targets,matches,onConnect,disabled=fal
   }
  };
  const cancel=()=>{dragStart.current=null;setDrag(null);};
- useEffect(()=>{if(disabled){setSelected(null);cancel();}},[disabled]);
+ useEffect(()=>{if(disabled){dragStart.current=null;setDrag(null);setSelected(null);}},[disabled]);
  const currentAnchor=drag?anchor(drag.side,drag.index):null;
  return <View ref={board} collapsable={false} style={{width:'100%',minHeight:120}}>
   <Svg pointerEvents="none" width="100%" height="100%"
