@@ -221,8 +221,8 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      loading?<LoadingState title="دریافت بازی…"/>:
      challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:
      spec&&state?<>{renderer}
-      {feedback&&!feedback.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'&&kind!=='choice'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
-      {feedback?.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='content'&&kind!=='video'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
+      {feedback&&!feedback.isCorrect?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
+      
       {error?<AppText tone="error">{error}</AppText>:null}
      </>:null}
 
@@ -234,8 +234,8 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      loading?<LoadingState title="دریافت بازی…"/>:
      challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:
      spec&&state?<>{renderer}
-      {feedback&&!feedback.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'&&kind!=='choice'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
-      {feedback?.isCorrect&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='content'&&kind!=='video'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
+      {feedback&&!feedback.isCorrect&&kind==='matching'?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
+      {feedback?.isCorrect&&kind==='matching'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
       {error?<AppText tone="error">{error}</AppText>:null}
      </>:null}
 
