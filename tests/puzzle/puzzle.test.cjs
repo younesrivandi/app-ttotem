@@ -34,24 +34,25 @@ test('Puzzle URL normalization: absolute, relative, encoded, data, unsafe',()=>{
  assert.equal(resolvePuzzleUri(null,base),undefined);
 });
 
-test('two-layer media with numeric/string piece identifiers and image objects',()=>{
+test('visual board and internal mask with numeric/string piece identifiers',()=>{
  const actual=resolvePuzzleMedia({data:{boardImageUrl:'/board.png',maskImageUrl:'/mask.png',
   pieces:[{id:1,imageUrl:'/red.png'},{pieceId:'two',image:{url:'/blue.png'}}]}},'https://api.test');
  assert.equal(actual.background,'https://api.test/board.png');
- assert.equal(actual.guide,'https://api.test/mask.png');
+ assert.equal(actual.mask,'https://api.test/mask.png');
  assert.deepEqual(plain(actual.pieces),[
   {id:'1',imageUrl:'https://api.test/red.png'},
   {id:'two',imageUrl:'https://api.test/blue.png'},
  ]);
 });
 
-test('single background, single guide, display-image fallback and duplicates',()=>{
+test('single background, mask-only is not visible, and duplicate paths',()=>{
  const base='https://api.test';
  assert.equal(resolvePuzzleMedia({data:{displayImageUrl:'/display.png'}},base).background,base+'/display.png');
  assert.equal(resolvePuzzleMedia({imageUrl:'/fallback.png'},base).background,base+'/fallback.png');
- assert.equal(resolvePuzzleMedia({data:{maskImageUrl:'/guide.png'}},base).guide,base+'/guide.png');
+ assert.equal(resolvePuzzleMedia({data:{maskImageUrl:'/guide.png'}},base).background,undefined);
+ assert.equal(resolvePuzzleMedia({data:{maskImageUrl:'/guide.png'}},base).mask,base+'/guide.png');
  const same=resolvePuzzleMedia({data:{boardImageUrl:'/same.png',maskImageUrl:'/same.png'}},base);
- assert.equal(same.guide,undefined);
+ assert.equal(same.background,base+'/same.png');
 });
 
 test('missing, malformed and duplicate pieces report errors without invented IDs',()=>{
@@ -108,22 +109,21 @@ test('missing board produces an explicit error, not a silent white rectangle',()
  assert.ok(all.some(n=>n.type==='AppText'&&n.props.children.includes('تصویر اصلی پازل')));
 });
 
-test('board and mask are two distinct, uncropped image layers',()=>{
- const all=nodes(render({background:'https://cdn/board.png',guide:'https://cdn/guide.png'}));
+test('visible board is the only image; an internal color mask is never rendered',()=>{
+ const all=nodes(render({background:'https://cdn/board.png',mask:'https://cdn/guide.png'}));
  const images=all.filter(n=>n.type==='Image');
- assert.deepEqual(images.map(n=>n.props.source.uri),['https://cdn/board.png','https://cdn/guide.png']);
+ assert.deepEqual(images.map(n=>n.props.source.uri),['https://cdn/board.png']);
  assert.ok(images.every(n=>n.props.resizeMode==='contain'));
  assert.ok(all.some(n=>n.type==='Pressable'&&n.props.accessibilityRole==='button'));
 });
 
-test('guide-only puzzle still renders without board source',()=>{
- const images=nodes(render({guide:'https://cdn/guide.png'})).filter(n=>n.type==='Image');
- assert.equal(images.length,1);
- assert.equal(images[0].props.source.uri,'https://cdn/guide.png');
+test('mask-only puzzle cannot render a color mask as the board',()=>{
+ const images=nodes(render({mask:'https://cdn/guide.png'})).filter(n=>n.type==='Image');
+ assert.equal(images.length,0);
 });
 
 test('invalid piece metadata is surfaced to the user',()=>{
- const all=nodes(render({guide:'https://cdn/guide.png',invalidPieces:2}));
+ const all=nodes(render({background:'https://cdn/board.png',invalidPieces:2}));
  assert.ok(all.some(n=>n.type==='AppText'&&String(n.props.children).includes('قطعه پازل ناقص')));
 });
 
@@ -136,7 +136,22 @@ test('legacy image in title or prompt can provide the missing board',()=>{
 test('puzzle image layers ignore touches via View and never pass pointerEvents to Image',()=>{
  const all=nodes(render({background:'https://cdn/board.png',guide:'https://cdn/guide.png'}));
  const images=all.filter(n=>n.type==='Image');
- assert.equal(images.length,2);
+ assert.equal(images.length,1);
  assert.ok(images.every(n=>!Object.prototype.hasOwnProperty.call(n.props,'pointerEvents')));
  assert.ok(all.some(n=>n.type==='View'&&n.props.pointerEvents==='none'&&n.props.style?.position==='absolute'));
+});
+
+test('flower-table regression: colored answer mask never replaces or covers the board',()=>{
+ const base='https://api.test';
+ const media=resolvePuzzleMedia({kind:'Puzzle',data:{
+  displayImageUrl:'/uploads/flower-table-grid.png',
+  boardImageUrl:'/uploads/legacy-board.png',
+  maskImageUrl:'/uploads/red-green-blue-yellow-validation-mask.png',
+  pieces:[{id:'rose',imageUrl:'/rose.png'}],
+ }},base);
+ assert.equal(media.background,base+'/uploads/flower-table-grid.png');
+ assert.equal(media.mask,base+'/uploads/red-green-blue-yellow-validation-mask.png');
+ const imgs=nodes(render({background:media.background})).filter(n=>n.type==='Image');
+ assert.deepEqual(imgs.map(n=>n.props.source.uri),[base+'/uploads/flower-table-grid.png']);
+ assert.ok(imgs.every(n=>!n.props.source.uri.includes('mask')));
 });
