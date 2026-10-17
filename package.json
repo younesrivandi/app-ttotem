@@ -16,7 +16,7 @@
     "export:web": "expo export --platform web",
     "test:engine": "tsc -p tsconfig.engine-test.json && node --test tests/engine/*.test.cjs",
     "verify:static": "node scripts/release-audit.cjs",
-    "verify": "npm run typecheck && npm run lint -- --max-warnings=0 && npm run test:engine && npm run test:auth && npm run test:puzzle && npm run test:matching && npm run verify:static",
+    "verify": "npm run typecheck && npm run lint -- --max-warnings=0 && npm run test:engine && npm run test:auth && npm run test:puzzle && npm run test:matching && npm run test:path && npm run verify:static",
     "release:check": "node scripts/release-audit.cjs --release",
     "build:android:preview": "eas build --platform android --profile preview",
     "build:android:production": "eas build --platform android --profile production",
@@ -24,7 +24,8 @@
     "build:ios:production": "eas build --platform ios --profile production",
     "test:auth": "node --test tests/auth/*.test.cjs",
     "test:puzzle": "node --test tests/puzzle/*.test.cjs",
-    "test:matching": "node --test tests/matching/*.test.cjs"
+    "test:matching": "node --test tests/matching/*.test.cjs",
+    "test:path": "node --test tests/path/*.test.cjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.0",
