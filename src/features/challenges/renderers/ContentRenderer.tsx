@@ -1,4 +1,4 @@
-import {Image,ScrollView,StyleSheet,View,useWindowDimensions} from 'react-native';
+import {Image,ScrollView,StyleSheet,View} from 'react-native';
 import {AppText} from '@/components/ui/AppText';
 import {VideoContent} from './VideoContent';
 import {AudioContent} from './AudioContent';
@@ -29,7 +29,6 @@ function ContentImage({uri}:{uri:string}){
 
 /** The header and action button are owned by PlayChallengeScreen. */
 export function ContentRenderer({text,imageUrl,audioUrl,videoUrl,onMediaFinished,completedMedia}:Props){
- const {height}=useWindowDimensions();
  const description=text?.trim();
  const hasSingleVisual=Boolean(imageUrl)!==Boolean(videoUrl);
  const audio=audioUrl?<AudioContent key={audioUrl} uri={audioUrl}
@@ -41,13 +40,12 @@ export function ContentRenderer({text,imageUrl,audioUrl,videoUrl,onMediaFinished
 
  if(hasSingleVisual){
   return <View style={{flex:1,minHeight:0,width:'100%'}}>
-   {description?<ScrollView style={{maxHeight:height*0.28,flexGrow:0,backgroundColor:'#F9F6FE'}}
-    contentContainerStyle={{paddingHorizontal:16,paddingVertical:12,alignItems:'center'}}
-    keyboardShouldPersistTaps="handled">
+   {description?<View style={{paddingHorizontal:16,paddingVertical:10,
+    backgroundColor:'#F9F6FE',alignItems:'center',justifyContent:'center'}}>
     <AppText weight="700" style={{textAlign:'center',fontSize:18,lineHeight:28,width:'100%'}}>
      {description}
     </AppText>
-   </ScrollView>:null}
+   </View>:null}
    {imageUrl?<ContentImage uri={imageUrl}/>:video}
    {audio?<View style={{paddingHorizontal:12,paddingVertical:8,backgroundColor:'#F9F6FE'}}>
     {audio}
