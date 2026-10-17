@@ -36,15 +36,15 @@ function detailFromResponse(value:unknown):Detail{if(!value||typeof value!=='obj
 export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challengeId:string}){
  const router=useRouter();const queryClient=useQueryClient();const inFlight=useRef(false);const latestState=useRef<EngineState|null>(null);const [ready,setReady]=useState(false);const [childId,setChildId]=useState('');const [state,setState]=useState<EngineState|null>(null);const [feedback,setFeedback]=useState<ServerFeedback|null>(null);const [error,setError]=useState('');const [toast,setToast]=useState('');const [drawing,setDrawing]=useState(false);const drawingRef=useRef(false);
  const pathIdleCallback=useRef<()=>void>(()=>{});
- const pathIdle=useRef<ReturnType<typeof createPathIdleScheduler>|null>(null);
- if(!pathIdle.current)pathIdle.current=createPathIdleScheduler(()=>pathIdleCallback.current());const [placements,setPlacements]=useState<Record<string,PuzzlePlacement>>({});
+ const [pathIdle]=useState(()=>createPathIdleScheduler(()=>pathIdleCallback.current()));
+ const [placements,setPlacements]=useState<Record<string,PuzzlePlacement>>({});
  useEffect(()=>{let live=true;const sync=()=>{if(live){setChildId(currentSession().childId??'');setReady(true)}};void bootstrapSession().then(sync);const unsub=subscribeSession(sync);return()=>{live=false;unsub()};},[]);
  const enabled=ready&&!!childId&&!!currentSession().child?.accessToken;
  const challenge=useQuery({queryKey:['challenge-detail',childId,stageId,challengeId],queryFn:async()=>detailFromResponse(await api.challenge(stageId,challengeId)),enabled});
  const summary=useQuery({queryKey:queryKeys.challenges(childId,stageId),queryFn:async()=>challengesResponseSchema.parse(await api.challenges(stageId)),enabled});
  const spec=challenge.data;const kind=spec?classifyChallenge(spec):'unsupported';
- useEffect(()=>{pathIdle.current?.cancel();drawingRef.current=false;inFlight.current=false;latestState.current=null;setState(null);setFeedback(null);setError('');setToast('');setDrawing(false);setPlacements({});
-  return()=>pathIdle.current?.cancel();
+ useEffect(()=>{pathIdle.cancel();drawingRef.current=false;inFlight.current=false;latestState.current=null;setState(null);setFeedback(null);setError('');setToast('');setDrawing(false);setPlacements({});
+  return()=>pathIdle.cancel();
  },[stageId,challengeId]);
  useEffect(()=>{if(spec){const initial=initialGameState(spec);latestState.current=initial;setState(initial);}},[spec,stageId,challengeId]);
  useEffect(()=>{if(!toast)return;const id=setTimeout(()=>setToast(''),2800);return()=>clearTimeout(id);},[toast]);
@@ -130,7 +130,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
   if(!current||current.submitting||current.solved)return;
   const next=setStrokes(current,strokes);
   latestState.current=next;setState(next);setFeedback(null);setError('');
-  pathIdle.current?.schedule();
+  pathIdle.schedule();
  };
  pathIdleCallback.current=()=>{
   const snapshot=latestState.current;
@@ -143,15 +143,15 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
   setDrawing(isDrawing);
   // Cancel as soon as a finger touches down. Even a brief tap/OS-cancel
   // must re-arm the check for previously completed strokes on release.
-  if(isDrawing)pathIdle.current?.cancel();
+  if(isDrawing)pathIdle.cancel();
   else{
    const current=latestState.current;
    if(kind==='path'&&!inFlight.current&&current&&!current.submitting&&!current.solved
-    &&current.strokes.length>0)pathIdle.current?.schedule();
+    &&current.strokes.length>0)pathIdle.schedule();
   }
  };
  const resetPathAfterError=()=>{
-  pathIdle.current?.cancel();
+  pathIdle.cancel();
   const current=latestState.current;
   if(!current||current.submitting||current.solved)return;
   update(value=>setStrokes(value,[]));
