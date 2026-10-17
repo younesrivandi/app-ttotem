@@ -63,7 +63,7 @@ function MatchTile(props:TileProps){
     borderColor:props.selected?colors.primary:props.matched?'#52A878':colors.border,
     backgroundColor:colors.surface,padding:8,
     alignItems:'center',justifyContent:'center'}}>
-   <ItemLabel value={props.value}/>
+   <ItemLabel value={props.value} centered/>
   </Pressable>
  </View>;
 }
