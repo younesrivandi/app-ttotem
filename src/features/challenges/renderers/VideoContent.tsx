@@ -15,6 +15,7 @@ export function VideoContent({uri,onFinish,fill=false}:Props){
  const [duration,setDuration]=useState(0);
  const holdRef=useRef<HoldMode|null>(null);
  const shouldResume=useRef(false);
+ const rewindTimer=useRef<ReturnType<typeof setInterval>|null>(null);
  const finishRef=useRef(onFinish);
  finishRef.current=onFinish;
  const finished=useCallback(()=>{setPlaying(false);finishRef.current();},[]);
@@ -23,7 +24,7 @@ export function VideoContent({uri,onFinish,fill=false}:Props){
  useEventListener(player,'timeUpdate',e=>setPosition(e.currentTime));
  useEventListener(player,'sourceLoad',e=>setDuration(e.duration));
  // Native autoplay works without interaction; browsers may block autoplay with sound.
- useEffect(()=>{try{player.play();}catch{/* Browser autoplay policy can require a tap. */}return()=>{player.pause();player.playbackRate=1;};},[player]);
+ useEffect(()=>{try{player.play();}catch{/* Browser autoplay policy can require a tap. */}return()=>{if(rewindTimer.current)clearInterval(rewindTimer.current);player.pause();player.playbackRate=1;};},[player]);
  const startHold=(mode:HoldMode)=>{
   if(holdRef.current)return;
   holdRef.current=mode;setHolding(mode);
@@ -36,13 +37,17 @@ export function VideoContent({uri,onFinish,fill=false}:Props){
    const step=mode==='forward'?10:-10;
    player.currentTime=Math.max(0,Math.min(player.duration||Infinity,player.currentTime+step));
    if(mode==='forward'){player.playbackRate=2;player.play();}
-   else player.pause();
+   else {
+    player.pause();
+    rewindTimer.current=setInterval(()=>{player.currentTime=Math.max(0,player.currentTime-1);},250);
+   }
   }
  };
  const endHold=()=>{
   const mode=holdRef.current;
   if(!mode)return;
   holdRef.current=null;setHolding(null);
+  if(rewindTimer.current){clearInterval(rewindTimer.current);rewindTimer.current=null;}
   player.playbackRate=1;
   if(shouldResume.current)player.play();
   else player.pause();
