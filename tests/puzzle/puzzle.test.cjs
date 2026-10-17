@@ -126,3 +126,9 @@ test('invalid piece metadata is surfaced to the user',()=>{
  const all=nodes(render({guide:'https://cdn/guide.png',invalidPieces:2}));
  assert.ok(all.some(n=>n.type==='AppText'&&String(n.props.children).includes('قطعه پازل ناقص')));
 });
+
+test('legacy image in title or prompt can provide the missing board',()=>{
+ const base='https://api.test';
+ assert.equal(resolvePuzzleMedia({title:{imageUrl:'/target.png'},data:{pieces:[]}},base).background,base+'/target.png');
+ assert.equal(resolvePuzzleMedia({data:{prompt:{imageUrl:'/question.png'}}},base).background,base+'/question.png');
+});
