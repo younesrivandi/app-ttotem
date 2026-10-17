@@ -76,6 +76,7 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
  const current=useRef({canPlace,onDrop});
  current.current={canPlace,onDrop};
  useEffect(()=>{live.current=true;return()=>{live.current=false;};},[]);
+ useEffect(()=>{if(chosen&&placements[chosen])setChosen(null);},[chosen,placements]);
  useEffect(()=>{
   let active=true;
   loadedRef.current=[];
@@ -99,6 +100,7 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
  const markLoaded=(url:string,width:number,height:number)=>{
   if(!live.current)return;
   loadedRef.current=loadedRef.current.includes(url)?loadedRef.current:[...loadedRef.current,url];
+  setFailed(previous=>previous.includes(url)?previous.filter(item=>item!==url):previous);
   setLoaded(previous=>previous.includes(url)?previous:[...previous,url]);
   if(url===primary&&width>0&&height>0)setRatio(width/height);
  };
