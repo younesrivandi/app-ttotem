@@ -64,6 +64,7 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
  const [ratio,setRatio]=useState(4/3);
  const [failed,setFailed]=useState<string[]>([]);
  const [loaded,setLoaded]=useState<string[]>([]);
+ const loadedRef=useRef<string[]>([]);
  const [retry,setRetry]=useState(0);
  const [chosen,setChosen]=useState<string|null>(null);
  const images=[background,guide].filter((url):url is string=>!!url);
@@ -77,7 +78,13 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
  useEffect(()=>{live.current=true;return()=>{live.current=false;};},[]);
  useEffect(()=>{
   let active=true;
+  loadedRef.current=[];
   setFailed([]);setLoaded([]);setRatio(4/3);setChosen(null);
+  // A stalled web image should show an actionable error, not an endless spinner.
+  const timer=setTimeout(()=>{
+   if(active&&primary&&!loadedRef.current.includes(primary))
+    setFailed(previous=>previous.includes(primary)?previous:[...previous,primary]);
+  },15000);
   const candidates=[primary,background].filter((url):url is string=>!!url);
   const getRatio=(i:number)=>{
    if(i>=candidates.length)return;
@@ -87,10 +94,11 @@ export function PuzzleRenderer({pieces,background,guide,invalidPieces=0,placemen
    },()=>{if(active)getRatio(i+1);});
   };
   getRatio(0);
-  return()=>{active=false;};
+  return()=>{active=false;clearTimeout(timer);};
  },[primary,background,retry]);
  const markLoaded=(url:string,width:number,height:number)=>{
   if(!live.current)return;
+  loadedRef.current=loadedRef.current.includes(url)?loadedRef.current:[...loadedRef.current,url];
   setLoaded(previous=>previous.includes(url)?previous:[...previous,url]);
   if(url===primary&&width>0&&height>0)setRatio(width/height);
  };
