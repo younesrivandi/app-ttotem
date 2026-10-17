@@ -127,3 +127,14 @@ test('lift and re-touch preserve two independent strokes and report drawing stat
  assert.equal(strokes.every(stroke=>stroke.points.length>=2),true);
  assert.deepEqual(drawn,[true,false,true,false]);
 });
+
+test('a short interrupted touch reschedules existing lines instead of stranding them',()=>{
+ const clock=fakeClock(),{createPathIdleScheduler}=makeScheduler(clock);
+ let sends=0;
+ const scheduler=createPathIdleScheduler(()=>sends++);
+ scheduler.schedule();clock.advance(1000);
+ scheduler.cancel(); // zero-length touch starts; the first stroke is still saved
+ clock.advance(2000);assert.equal(sends,0);
+ scheduler.schedule(); // onDrawingChange(false) re-arms with saved strokes
+ clock.advance(1800);assert.equal(sends,1);
+});
