@@ -14,6 +14,8 @@ import {challengesResponseSchema} from '@/features/stages/model/challenges';
 import {applyFeedback,buildAttempt,canSubmit,classifyChallenge,connectMatch,initialGameState,moveSorting,resolveNextStep,setStrokes,toggleChoice} from '../engine';
 import type {ChallengeSpec,EngineState,ServerFeedback,Stroke,PuzzlePlacement} from '../engine';
 import {PuzzleRenderer} from '../renderers/PuzzleRenderer';
+import {resolvePuzzleMedia} from '../renderers/puzzleModel';
+import {API_BASE_URL} from '@/services/api/config';
 import {ChallengePrompt} from '../components/ChallengePrompt';
 import {submitAttempt} from '../api/attemptsApi';
 import {ChoiceRenderer} from '../renderers/ChoiceRenderer';
@@ -178,9 +180,10 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
   latestState.current=next;setState(next);setFeedback(null);
   void submit(next);
  };
+ const puzzleMedia=resolvePuzzleMedia(spec,API_BASE_URL);
  const data=spec?.data;
  const renderer=(()=>{if(!state||!spec)return null;switch(kind){
- case 'puzzle':return <PuzzleRenderer pieces={data?.pieces??[]} boardImageUrl={data?.boardImageUrl||data?.displayImageUrl||data?.imageUrl||spec.imageUrl} maskImageUrl={data?.maskImageUrl} placements={placements} disabled={sending||solved} onDrop={placePuzzlePiece}/>;
+ case 'puzzle':return <PuzzleRenderer pieces={puzzleMedia.pieces} background={puzzleMedia.background} guide={puzzleMedia.guide} invalidPieces={puzzleMedia.invalidPieces} placements={placements} disabled={sending||solved} onDrop={placePuzzlePiece}/>;
  case 'choice':return <ChoiceRenderer options={data?.options??[]} selected={state.selected} onSelect={selectChoiceAndCheck} disabled={sending||solved}/>;
  case 'sorting':return <SortingRenderer items={data?.items??[]} order={state.sortOrder} onMove={moveSortAndCheck} disabled={sending||solved}/>;
  case 'matching':return <MatchingRenderer key={`${stageId}:${challengeId}`} sources={data?.collections?.[0]??[]} targets={data?.collections?.[1]??[]} matches={state.matches} onConnect={connectMatchAndCheck} disabled={sending||solved}/>;
