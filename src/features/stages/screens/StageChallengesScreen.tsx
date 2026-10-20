@@ -70,7 +70,7 @@ export function StageChallengesScreen({stageId}:{stageId:string}){
     {challenges.length===0?<EmptyState title="چالشی برای این مرحله موجود نیست"/>:
      <View style={{gap:13}}>{challenges.map((challenge,index)=>
       <ChallengeCard key={challenge.challengeId} challenge={challenge} index={index}
-       locked={challengeLocked(challenge,index,challenges,next)}
+       locked={challengeLocked(challenge,index,challenges,next,completeCount,complete)}
        onPress={()=>router.push({pathname:'/play/[stageId]/[challengeId]',params:{stageId,challengeId:challenge.challengeId}})}/>
      )}</View>}
     <View style={{marginTop:3,borderRadius:22,borderWidth:1,borderStyle:'dashed',
