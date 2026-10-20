@@ -1,0 +1,40 @@
+name: Native quality gate
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-and-web:
+    name: Typecheck, tests and web export
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.4'
+          cache: npm
+      - name: Install exact dependencies
+        run: npm ci
+      - name: Check Expo dependency compatibility
+        run: npx expo install --check
+      - name: Run code and regression checks
+        run: npm run verify
+      - name: Check web production export
+        run: npm run export:web
+        env:
+          EXPO_PUBLIC_API_BASE_URL: https://api.ttotem.ir
+      - name: Upload web export for inspection
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: expo-web-dist
+          path: dist
+          if-no-files-found: error
