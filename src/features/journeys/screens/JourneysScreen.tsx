@@ -173,6 +173,22 @@ export function JourneysScreen() {
                         width={cardWidth} height={cardHeight} onPress={() => open(index)} />
                     </View>}
                 />
+                {journeys.length > 1 && (
+                  <>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="انتخاب سفر سمت چپ"
+                      onPress={() => selectIndex((selected - 1 + journeys.length) % journeys.length)}
+                      style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: (canvasWidth - cardWidth) / 2 }}
+                    />
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="انتخاب سفر سمت راست"
+                      onPress={() => selectIndex((selected + 1) % journeys.length)}
+                      style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: (canvasWidth - cardWidth) / 2 }}
+                    />
+                  </>
+                )}
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginVertical: 8 }}>
                 {journeys.map((journey, index) =>
