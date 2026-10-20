@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Image, ImageBackground, Pressable, View, useWindowDimensions } from 'react-native';
+import { Image, ImageBackground, Pressable, View, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Carousel, type CarouselRef } from 'react-native-reanimated-carousel';
 import { useRouter } from 'expo-router';
@@ -114,7 +114,7 @@ export function JourneysScreen() {
     router.push({ pathname: '/journeys/[journeyId]', params: { journeyId: item.journeyId } });
   };
 
-  const canvasWidth = Math.min(width, 560);
+  const canvasWidth = Math.min(width, Platform.OS === 'web' ? 425 : 560);
   const cardWidth = Math.min(224, Math.max(172, canvasWidth * 0.52));
   // In v5 the snap step must match the viewport for centered parallax items.
   // Smaller itemSize with wider cards caused the visible overlap and left alignment.
