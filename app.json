@@ -11,11 +11,16 @@
       "supportsTablet": true
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/image/logo.png",
+        "backgroundColor": "#F6F8F6"
+      }
     },
     "web": {
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "favicon": "./assets/image/logo.png"
     },
     "plugins": [
       "expo-router",
@@ -34,7 +39,13 @@
       "policy": "appVersion"
     },
     "androidNavigationBar": {
-      "visible": "sticky-immersive"
+      "enforceContrast": true
+    },
+    "icon": "./assets/image/logo.png",
+    "androidStatusBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#F6F8F6",
+      "translucent": true
     }
   }
 }
