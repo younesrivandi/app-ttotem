@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image, ImageBackground, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { Image, ImageBackground, Pressable, ScrollView, View, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -26,7 +26,8 @@ export function JourneyStagesScreen({ journeyId }: { journeyId: string }) {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const mapWidth = Math.max(250, Math.min(width - 36, 430 - 36));
+  const appWidth = Platform.OS === 'web' ? Math.min(width, 425) : width;
+  const mapWidth = Math.max(0, Math.min(appWidth - 36, 430 - 36));
   const laneWidth = Math.min(mapWidth * 0.66, 245);
   const left = (mapWidth - laneWidth) / 2;
   const [childId, setChildId] = useState('');
