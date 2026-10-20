@@ -5,7 +5,6 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {AppText} from '@/components/ui/AppText';
-import {AppCard} from '@/components/ui/AppCard';
 import {LoadingState,ErrorState} from '@/components/ui/AsyncState';
 import {api} from '@/services/api/endpoints';
 import {bootstrapSession,currentSession,subscribeSession} from '@/services/auth/session';
@@ -27,6 +26,7 @@ import {ContentRenderer} from '../renderers/ContentRenderer';
 import {VoiceRecorder} from '../renderers/VoiceRecorder';
 import {gameHaptics} from '../services/feedback';
 import {spacing} from '@/theme/tokens';
+import {useToast} from '@/components/ui/AppToast';
 type MediaValue=string|{text?:string;title?:string;imageUrl?:string;audioUrl?:string};
 type Detail=ChallengeSpec&{title?:MediaValue;prompt?:MediaValue;description?:string;instruction?:string;audioUrl?:string;titleAudioUrl?:string;titleImageUrl?:string;imageUrl?:string;voiceUrl?:string;data?:ChallengeSpec['data']&{titleMediaType?:string;titleMediaUrl?:string;showTextTitle?:boolean;voiceUrl?:string;title?:MediaValue;prompt?:MediaValue;description?:string;instruction?:string;titleAudioUrl?:string;titleImageUrl?:string;displayImageUrl?:string;imageUrl?:string;text?:string;referenceAudioUrl?:string;expectedText?:string}};
 const message=(error:unknown)=>error instanceof Error?error.message:'خطای نامشخص';
@@ -34,7 +34,8 @@ const mediaText=(value:MediaValue|undefined):string|undefined=>
  typeof value==='string'?value:value?.text??value?.title;
 function detailFromResponse(value:unknown):Detail{if(!value||typeof value!=='object')throw new Error('پاسخ چالش معتبر نیست');const obj=value as Record<string,unknown>;if(typeof obj.kind!=='string')throw new Error('نوع چالش در پاسخ سرور موجود نیست');if(obj.data!==undefined&&(typeof obj.data!=='object'||obj.data===null))throw new Error('داده چالش معتبر نیست');return obj as Detail;}
 export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challengeId:string}){
- const router=useRouter();const queryClient=useQueryClient();const inFlight=useRef(false);const latestState=useRef<EngineState|null>(null);const [ready,setReady]=useState(false);const [childId,setChildId]=useState('');const [state,setState]=useState<EngineState|null>(null);const [feedback,setFeedback]=useState<ServerFeedback|null>(null);const [error,setError]=useState('');const [toast,setToast]=useState('');const [drawing,setDrawing]=useState(false);const drawingRef=useRef(false);
+ const {show:showToast}=useToast();
+ const router=useRouter();const queryClient=useQueryClient();const inFlight=useRef(false);const latestState=useRef<EngineState|null>(null);const [ready,setReady]=useState(false);const [childId,setChildId]=useState('');const [state,setState]=useState<EngineState|null>(null);const [feedback,setFeedback]=useState<ServerFeedback|null>(null);const [error,setError]=useState('');const [drawing,setDrawing]=useState(false);const drawingRef=useRef(false);
  const pathIdleCallback=useRef<()=>void>(()=>{});
  const [pathIdle]=useState(()=>createPathIdleScheduler(()=>pathIdleCallback.current()));
  const [placements,setPlacements]=useState<Record<string,PuzzlePlacement>>({});
@@ -43,11 +44,10 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  const challenge=useQuery({queryKey:['challenge-detail',childId,stageId,challengeId],queryFn:async()=>detailFromResponse(await api.challenge(stageId,challengeId)),enabled});
  const summary=useQuery({queryKey:queryKeys.challenges(childId,stageId),queryFn:async()=>challengesResponseSchema.parse(await api.challenges(stageId)),enabled});
  const spec=challenge.data;const kind=spec?classifyChallenge(spec):'unsupported';
- useEffect(()=>{pathIdle.cancel();drawingRef.current=false;inFlight.current=false;latestState.current=null;setState(null);setFeedback(null);setError('');setToast('');setDrawing(false);setPlacements({});
+ useEffect(()=>{pathIdle.cancel();drawingRef.current=false;inFlight.current=false;latestState.current=null;setState(null);setFeedback(null);setError('');setDrawing(false);setPlacements({});
   return()=>pathIdle.cancel();
  },[stageId,challengeId]);
  useEffect(()=>{if(spec){const initial=initialGameState(spec);latestState.current=initial;setState(initial);}},[spec,stageId,challengeId]);
- useEffect(()=>{if(!toast)return;const id=setTimeout(()=>setToast(''),2800);return()=>clearTimeout(id);},[toast]);
  const update=(fn:(s:EngineState)=>EngineState)=>{const current=latestState.current;if(!current)return;const next=fn(current);latestState.current=next;setState(next);};
  const loading=!ready||(enabled&&(challenge.isPending||summary.isPending));
  const sending=state?.submitting??false;const solved=state?.solved??false;
@@ -67,9 +67,10 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
     if(!response.isCorrect&&kind==='matching')return {...updated,matches:[]};
     return !response.isCorrect&&kind==='path'?{...updated,strokes:[]}:updated;
    });
-   if(!response.isCorrect&&(kind==='path'||kind==='sorting'||kind==='voice'||kind==='choice'||kind==='matching'))setToast('پاسخ درست نبود، دوباره تلاش کن!');
+   if(!response.isCorrect&&(kind==='path'||kind==='sorting'||kind==='voice'||kind==='choice'||kind==='matching'))showToast('پاسخ درست نبود، دوباره تلاش کن!',{kind:'error'});
    void (response.isCorrect?gameHaptics.correct():gameHaptics.incorrect());
    if(response.isCorrect){
+    showToast('آفرین! پاسخ درست بود.',{kind:'success'});
     await Promise.all([
      queryClient.invalidateQueries({queryKey:queryKeys.challenges(childId,stageId)}),
      queryClient.invalidateQueries({queryKey:['child',childId,'stages',stageId,'result']}),
@@ -160,14 +161,14 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  const placePuzzlePiece=async(pieceId:string,x:number,y:number)=>{
   const current=latestState.current;
   if(kind!=='puzzle'||inFlight.current||!current||current.solved||placements[pieceId])return;
-  inFlight.current=true;setError('');setToast('');
+  inFlight.current=true;setError('');
   update(value=>({...value,submitting:true}));
   try{
    const raw=await api.activity(stageId,challengeId,'place-piece',{pieceId,x,y},Date.now()-current.startedAt);
    if(!raw||typeof raw!=='object')throw new Error('پاسخ بررسی قطعه معتبر نیست');
    const result=raw as Record<string,unknown>;
    if(!result.isCorrect||!result.canonical||typeof result.canonical!=='object'){
-    setToast('جای قطعه درست نیست، دوباره تلاش کن!');
+    showToast('جای قطعه درست نیست، دوباره تلاش کن!',{kind:'error'});
     void gameHaptics.incorrect();
     update(value=>({...value,submitting:false,mistakes:typeof result.mistakeCount==='number'?result.mistakeCount:value.mistakes+1}));
     return;
@@ -179,6 +180,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
     width:values[2] as number,height:values[3] as number};
    const next={...placements,[pieceId]:placement};
    setPlacements(next);
+   showToast('آفرین! قطعه درست قرار گرفت.',{kind:'success',duration:1600});
    void gameHaptics.correct();
    const mistakeCount=typeof result.mistakeCount==='number'?result.mistakeCount:current.mistakes;
    update(value=>({...value,submitting:false,mistakes:mistakeCount}));
@@ -191,13 +193,14 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
     setFeedback(feedbackResult);
     update(value=>applyFeedback(value,feedbackResult));
     if(feedbackResult.isCorrect){
+     showToast('آفرین! پازل کامل شد.',{kind:'success'});
      await Promise.all([
       queryClient.invalidateQueries({queryKey:queryKeys.challenges(childId,stageId)}),
       queryClient.invalidateQueries({queryKey:['child',childId,'stages',stageId,'result']}),
       queryClient.invalidateQueries({queryKey:queryKeys.journeys(childId)}),
      ]);
      await proceed(feedbackResult.nextChallengeId);
-    }else setToast('پازل هنوز کامل نشده، دوباره تلاش کن!');
+    }else showToast('پازل هنوز کامل نشده، دوباره تلاش کن!',{kind:'error'});
    }
   }catch(e){
    setError(message(e));
@@ -277,7 +280,6 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      loading?<LoadingState title="دریافت بازی…"/>:
      challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:
      spec&&state?<>{renderer}
-      {feedback&&!feedback.isCorrect?<AppCard><AppText tone="error">پاسخ درست نبود، دوباره تلاش کن.</AppText></AppCard>:null}
       
       {error?<AppText tone="error">{error}</AppText>:null}
      </>:null}
@@ -291,16 +293,10 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
      challenge.isError||summary.isError?<ErrorState description={message(challenge.error??summary.error)} onRetry={()=>{void challenge.refetch();void summary.refetch()}}/>:
      spec&&state?<>{renderer}
       
-      {feedback?.isCorrect&&kind==='matching'?<AppCard><AppText>آفرین! پاسخ توسط سرور تأیید شد.</AppText></AppCard>:null}
       {error?<AppText tone="error">{error}</AppText>:null}
      </>:null}
 
      </ScrollView>}
-   {!!toast&&<View pointerEvents="none" accessibilityRole="alert" style={{
-    position:'absolute',left:20,right:20,bottom:28,zIndex:50,elevation:20,
-    backgroundColor:'#38264F',borderRadius:16,paddingHorizontal:18,paddingVertical:14,
-    shadowColor:'#241632',shadowOpacity:0.3,shadowRadius:12,
-   }}><AppText weight="700" style={{color:'#FFFFFF',textAlign:'center',fontSize:14}}>{toast}</AppText></View>}
    {spec&&state&&enabled&&kind!=='sorting'&&kind!=='path'&&kind!=='puzzle'&&kind!=='voice'&&kind!=='choice'&&kind!=='matching'&&<View style={{paddingVertical:fullScreenContent?0:12,borderTopWidth:fullScreenContent?0:1,borderTopColor:'#EDE6F7'}}>
      {feedback?.isCorrect?
        <Pressable accessibilityRole="button" onPress={()=>{void proceed(feedback.nextChallengeId).catch(e=>setError(message(e)));}}
