@@ -7,20 +7,23 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/branding/app-icon.png",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "icon": "./assets/branding/app-icon.png"
     },
     "android": {
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/image/logo.png",
-        "backgroundColor": "#F6F8F6"
+        "foregroundImage": "./assets/branding/adaptive-foreground.png",
+        "monochromeImage": "./assets/branding/adaptive-monochrome.png",
+        "backgroundColor": "#FFFFFF"
       }
     },
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/image/logo.png"
+      "favicon": "./assets/branding/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -41,7 +44,6 @@
     "androidNavigationBar": {
       "enforceContrast": true
     },
-    "icon": "./assets/image/logo.png",
     "androidStatusBar": {
       "barStyle": "dark-content",
       "backgroundColor": "#F6F8F6",
