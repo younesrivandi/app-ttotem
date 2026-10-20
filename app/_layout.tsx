@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { DataProvider } from '@/bootstrap/providers/DataProvider';
+import { ToastProvider } from '@/components/ui/AppToast';
 import { AppThemeProvider, useAppTheme } from '@/theme/ThemeProvider';
 
 function Navigation() {
@@ -23,6 +24,6 @@ function Navigation() {
 }
 export default function RootLayout() {
   return <GestureHandlerRootView style={{flex:1}}><SafeAreaProvider><AppThemeProvider>
-    <DataProvider><BottomSheetModalProvider><Navigation /></BottomSheetModalProvider></DataProvider>
+    <DataProvider><BottomSheetModalProvider><ToastProvider><Navigation /></ToastProvider></BottomSheetModalProvider></DataProvider>
   </AppThemeProvider></SafeAreaProvider></GestureHandlerRootView>;
 }
