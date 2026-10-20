@@ -76,3 +76,38 @@ test('backend type-independent stage unlock uses same persistent progress',()=>{
  assert.equal(isStageLocked(stages[1],1,stages),false);
  assert.equal(isJourneyStageLocked(stages[1],1,stages),false);
 });
+
+
+function loadChallenges(){
+ const js=ts.transpileModule(file('src/features/stages/model/challenges.ts'),{
+  compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020},
+ }).outputText;
+ const module={exports:{}};
+ vm.runInNewContext('(function(require,module,exports){'+js+'\n})',{})(
+  name=>name==='zod'?require('zod'):(()=>{throw Error('Unexpected dependency '+name);})(),
+  module,module.exports);
+ return module.exports;
+}
+const {challengeSchema,challengeLocked}=loadChallenges();
+const challenges=()=>[1,2,3,4].map(n=>challengeSchema.parse({challengeId:String(n),order:n}));
+
+test('new stage opens only its first challenge',()=>{
+ const items=challenges();
+ assert.deepEqual(items.map((item,index)=>challengeLocked(item,index,items,undefined,0,false)),[false,true,true,true]);
+});
+test('completedCount keeps previous challenges and the next challenge open',()=>{
+ const items=challenges();
+ assert.deepEqual(items.map((item,index)=>challengeLocked(item,index,items,undefined,2,false)),[false,false,false,true]);
+});
+test('nextChallengeId restores access to earlier challenges',()=>{
+ const items=challenges();
+ assert.deepEqual(items.map((item,index)=>challengeLocked(item,index,items,'3',0,false)),[false,false,false,true]);
+});
+test('completed stage allows replay of all challenges',()=>{
+ const items=challenges();
+ assert.deepEqual(items.map((item,index)=>challengeLocked(item,index,items,undefined,4,true)),[false,false,false,false]);
+});
+test('later completed challenge keeps earlier challenges open',()=>{
+ const items=challenges();items[2].isCompleted=true;
+ assert.deepEqual(items.map((item,index)=>challengeLocked(item,index,items,undefined,0,false)),[false,false,false,false]);
+});
