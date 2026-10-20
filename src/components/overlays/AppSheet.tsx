@@ -10,7 +10,7 @@ export const AppSheet = forwardRef<AppSheetHandle,Props>(function AppSheet({chil
  const {colors}=useAppTheme();
  const points=useMemo(()=>snapPoints??['45%','75%'],[snapPoints]);
  const backdrop:NonNullable<BottomSheetModalProps['backdropComponent']> = (props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close"/>;
- return <BottomSheetModal ref={ref} snapPoints={points} enablePanDownToClose onDismiss={onDismiss} backdropComponent={backdrop}
+ return <BottomSheetModal ref={ref} snapPoints={points} enablePanDownToClose keyboardBehavior="interactive" keyboardBlurBehavior="restore" android_keyboardInputMode="adjustResize" onDismiss={onDismiss} backdropComponent={backdrop}
    backgroundStyle={{backgroundColor:colors.surface}} handleIndicatorStyle={{backgroundColor:colors.textMuted}}>
    <BottomSheetView style={{padding:spacing.lg}}>{children}</BottomSheetView>
  </BottomSheetModal>;
