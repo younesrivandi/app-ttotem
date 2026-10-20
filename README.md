@@ -9,7 +9,6 @@ TTOTEM اپلیکیشنی فارسی و راست‌به‌چپ برای تجرب
 ## فهرست راهنما
 
 - [پیش‌نیازها](#پیشنیازها)
-- [نصب سریع](#نصب-سریع)
 - [تنظیم متغیرهای محیطی](#تنظیم-متغیرهای-محیطی)
 - [اجرای Web / Android / iOS](#اجرای-برنامه)
 - [اسکریپت‌ها و تست](#اسکریپتها-و-تست)
@@ -29,25 +28,6 @@ TTOTEM اپلیکیشنی فارسی و راست‌به‌چپ برای تجرب
 - **iOS:** macOS + Xcode برای شبیه‌ساز و بیلد محلی؛ برای EAS cloud build لزوماً macOS محلی لازم نیست. انتشار در App Store به حساب Apple Developer و تنظیمات امضا نیاز دارد.
 - **Web:** مرورگر به‌روز.
 - **بیلد ابری:** حساب Expo/EAS و دسترسی به پروژه؛ برای نصب CLI می‌توانید از `npx eas-cli` استفاده کنید.
-
-## نصب سریع
-
-~~~bash
-git clone --branch dev https://github.com/younesrivandi/app-ttotem.git
-cd app-ttotem
-npm ci
-cp .env.example .env
-npx expo install --check
-npm start
-~~~
-
-در ویندوز PowerShell به جای دستور کپی:
-
-~~~powershell
-Copy-Item .env.example .env
-~~~
-
-اگر `npm ci` به دلیل ناسازگاری lockfile شکست خورد، پیش از تغییر وابستگی‌ها دلیل را بررسی کنید؛ اجرای `npm install` می‌تواند lockfile را تغییر دهد. پروژه را با همان package manager ثبت‌شده نگه دارید.
 
 ## تنظیم متغیرهای محیطی
 
