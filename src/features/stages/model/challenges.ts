@@ -5,6 +5,17 @@ export const challengesResponseSchema=z.object({challenges:z.array(challengeSche
 export type Challenge=z.infer<typeof challengeSchema>;
 export function challengeDone(c:Challenge){return c.isCompleted===true || (c.hasProgress===true && c.allowResume!==true);}
 export function nextChallengeId(challenges:Challenge[],suggested?:string|null){if(suggested)return suggested;return challenges.find(c=>c.allowResume)?.challengeId ?? challenges.find(c=>!c.isCompleted&&!c.hasProgress)?.challengeId;}
-export function challengeLocked(challenge:Challenge,index:number,sorted:Challenge[],nextId?:string){return !challengeDone(challenge)&& index>0 && !challengeDone(sorted[index-1]!)&&challenge.challengeId!==nextId;}
+/** A reached challenge remains replayable even if per-item flags are stale. */
+export function challengeLocked(
+ challenge:Challenge,index:number,sorted:readonly Challenge[],nextId?:string,
+ completedCount=0,stageComplete=false,
+){
+ if(index===0||stageComplete||challengeDone(challenge)||challenge.allowResume===true)return false;
+ const nextIndex=nextId?sorted.findIndex(item=>item.challengeId===nextId):-1;
+ if(nextIndex>=0&&index<=nextIndex)return false;
+ if(Number.isFinite(completedCount)&&index<=Math.max(0,completedCount))return false;
+ if(sorted.slice(index+1).some(challengeDone))return false;
+ return !challengeDone(sorted[index-1]!);
+}
 export function kindLabel(kind?:string|null){return ({Path:'تمرین مسیر',Choice:'انتخاب پاسخ',Sorting:'مرتب‌سازی',Matching:'جفت‌کردن'} as Record<string,string>)[kind??''] ?? 'بازی آموزشی';}
 export function kindIcon(kind?:string|null){return ({Path:'✏️',Choice:'🎯',Sorting:'🧩',Matching:'🪄'} as Record<string,string>)[kind??''] ?? '⭐';}
