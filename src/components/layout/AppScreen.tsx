@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react';
-import { ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
@@ -16,8 +16,10 @@ export function AppScreen({children, scroll = true, contentStyle}: Props) {
   };
   return (
     <SafeAreaView edges={['top','bottom','left','right']} style={{ flex:1, backgroundColor: colors.background }}>
-      {scroll ? <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[containerStyle, contentStyle]}>{children}</ScrollView>
-        : <View style={[{flex:1},containerStyle,contentStyle]}>{children}</View>}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{flex:1}}>
+        {scroll ? <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'} contentContainerStyle={[containerStyle, contentStyle]}>{children}</ScrollView>
+          : <View style={[{flex:1},containerStyle,contentStyle]}>{children}</View>}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

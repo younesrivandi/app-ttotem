@@ -7,9 +7,9 @@ import { DataProvider } from '@/bootstrap/providers/DataProvider';
 import { AppThemeProvider, useAppTheme } from '@/theme/ThemeProvider';
 
 function Navigation() {
-  const { colors } = useAppTheme();
+  const { colors, resolvedMode } = useAppTheme();
   return <>
-    <StatusBar hidden />
+    <StatusBar style={resolvedMode === 'dark' ? 'light' : 'dark'} hidden={false} translucent backgroundColor="transparent" />
     <Stack screenOptions={{headerShown:false,contentStyle:{backgroundColor:colors.background}}}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="login" options={{presentation:'modal'}} />

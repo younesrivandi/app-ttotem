@@ -1,4 +1,4 @@
-import { ImageBackground, ScrollView, View, useWindowDimensions } from 'react-native';
+import { ImageBackground, KeyboardAvoidingView, Platform, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ParentLoginForm } from '@/features/auth/components/ParentLoginForm';
 
@@ -7,6 +7,7 @@ export default function Login() {
   const { height } = useWindowDimensions();
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: '#E8E5EE' }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
       <View style={{ flex: 1, width: '100%', maxWidth: 440, alignSelf: 'center', overflow: 'hidden' }}>
         <ImageBackground
           source={require('../assets/image/bg-login.png')}
@@ -16,6 +17,7 @@ export default function Login() {
         >
           <ScrollView
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             contentContainerStyle={{
               minHeight: Math.max(height - 60, 680),
               paddingHorizontal: 30,
@@ -27,6 +29,7 @@ export default function Login() {
           </ScrollView>
         </ImageBackground>
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
