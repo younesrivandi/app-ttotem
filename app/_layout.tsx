@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -24,6 +25,8 @@ function Navigation() {
 }
 export default function RootLayout() {
   return <GestureHandlerRootView style={{flex:1}}><SafeAreaProvider><AppThemeProvider>
-    <DataProvider><BottomSheetModalProvider><ToastProvider><Navigation /></ToastProvider></BottomSheetModalProvider></DataProvider>
+    <View style={Platform.OS === 'web' ? { flex: 1, width: '100%', maxWidth: 425, alignSelf: 'center', overflow: 'hidden' } : { flex: 1 }}>
+      <DataProvider><BottomSheetModalProvider><ToastProvider><Navigation /></ToastProvider></BottomSheetModalProvider></DataProvider>
+    </View>
   </AppThemeProvider></SafeAreaProvider></GestureHandlerRootView>;
 }
