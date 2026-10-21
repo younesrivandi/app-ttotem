@@ -46,7 +46,7 @@ export function PlayChallengeScreen({stageId,challengeId}:{stageId:string;challe
  const spec=challenge.data;const kind=spec?classifyChallenge(spec):'unsupported';
  useEffect(()=>{pathIdle.cancel();drawingRef.current=false;inFlight.current=false;latestState.current=null;setState(null);setFeedback(null);setError('');setDrawing(false);setPlacements({});
   return()=>pathIdle.cancel();
- },[stageId,challengeId]);
+ },[stageId,challengeId,pathIdle]);
  useEffect(()=>{if(spec){const initial=initialGameState(spec);latestState.current=initial;setState(initial);}},[spec,stageId,challengeId]);
  const update=(fn:(s:EngineState)=>EngineState)=>{const current=latestState.current;if(!current)return;const next=fn(current);latestState.current=next;setState(next);};
  const loading=!ready||(enabled&&(challenge.isPending||summary.isPending));
