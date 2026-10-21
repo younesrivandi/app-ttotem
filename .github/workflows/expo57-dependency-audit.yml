@@ -4,7 +4,7 @@ on:
     branches: [chore/expo57-dependency-audit]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -28,8 +28,25 @@ jobs:
           NODE
           npm ls uuid eslint unrs-resolver --all || true
           npm ls expo react react-native --depth=0
+      - name: Apply only in-range audit fixes
+        run: |
+          npm audit fix --package-lock-only --no-fund || true
+          npm ci
+          npm audit --json > /tmp/audit-after.json || true
+          node -e "console.log('AFTER',JSON.stringify(require('/tmp/audit-after.json').metadata?.vulnerabilities))"
+          git diff --stat
       - name: Verify application
         run: |
           npx expo install --check
           npm run verify
           npm run export:web
+          npx expo-doctor@latest
+      - name: Save tested lockfile-only fixes on isolated branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'fix: safe lockfile security updates for Expo 57'
+            git push origin HEAD:chore/expo57-dependency-audit
+          fi
