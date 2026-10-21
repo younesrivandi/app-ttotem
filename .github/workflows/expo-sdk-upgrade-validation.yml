@@ -1,0 +1,49 @@
+name: Validate Expo SDK 55 migration (isolated)
+# Temporary migration experiment. Never runs against expo, dev or main.
+on:
+  push:
+    branches: [chore/expo-sdk-upgrade-validation]
+    paths:
+      - '.github/workflows/expo-sdk-upgrade-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: npm
+      - name: Install SDK 54 baseline exactly
+        run: npm ci
+      - name: Upgrade one major SDK at a time and synchronize the lockfile
+        run: |
+          npm install expo@~55.0.0 --save
+          npx expo install --fix --npm
+      - name: Validate Expo dependencies
+        run: |
+          npx expo install --check
+          npx expo-doctor@latest
+      - name: Run existing regression suite
+        run: npm run verify
+      - name: Check web production bundle
+        run: npm run export:web
+        env:
+          EXPO_PUBLIC_API_BASE_URL: https://api.ttotem.ir
+      - name: Save validated migration only on the isolated branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: validate Expo SDK 55 upgrade [sdk-upgrade-bot]"
+            git push origin HEAD:chore/expo-sdk-upgrade-validation
+          fi
