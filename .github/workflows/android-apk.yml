@@ -66,31 +66,44 @@ jobs:
       - name: Generate Android native project
         run: npx expo prebuild --platform android --no-install --non-interactive
 
-      - name: Assemble standalone release APK
+      - name: Assemble universal release APK (all CPU architectures)
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew :app:assembleRelease --no-daemon --stacktrace
 
-      - name: Verify and stage APK
+      - name: Save universal APK
         run: |
           mkdir -p artifacts
-          APK=$(find android/app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | head -n 1)
-          if [ -z "$APK" ]; then
-            echo "::error::No release APK was produced"
+          cp android/app/build/outputs/apk/release/app-release.apk artifacts/ttotem-universal-release.apk
+
+      - name: Assemble smaller ARM64 APK (modern Android phones)
+        working-directory: android
+        run: |
+          ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a --rerun-tasks --no-daemon --stacktrace
+
+      - name: Verify and stage optimized APK
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk artifacts/ttotem-arm64-release.apk
+          echo "APK sizes:"
+          ls -lh artifacts/
+          echo "ARM64 APK native ABIs:"
+          unzip -Z1 artifacts/ttotem-arm64-release.apk | grep '^lib/' | cut -d/ -f2 | sort -u
+          if unzip -Z1 artifacts/ttotem-arm64-release.apk | grep -Eq '^lib/(x86|x86_64|armeabi-v7a)/'; then
+            echo "::error::Optimized APK still includes non-ARM64 libraries"
             exit 1
           fi
-          cp "$APK" artifacts/ttotem-preview-release.apk
-          ls -lh artifacts/
+          echo "### Android APK sizes" >> "$GITHUB_STEP_SUMMARY"
+          du -h artifacts/*.apk >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload installable APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: ttotem-android-apk-${{ github.run_number }}
-          path: artifacts/ttotem-preview-release.apk
+          path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14
 
-# This workflow is for internal installation/testing only. Expo's generated
+# Download ttotem-arm64-release.apk for modern 64-bit ARM Android phones.\n# Use ttotem-universal-release.apk when device compatibility is uncertain.\n# This workflow is for internal installation/testing only. Expo's generated
 # Android Gradle template may sign release builds with the default debug key.
 # Never distribute this artifact as a Play Store production release.
