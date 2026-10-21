@@ -32,6 +32,14 @@ jobs:
           npm run export:web
           npx expo export --platform android --output-dir dist-android
           npx expo export --platform ios --output-dir dist-ios
+      - name: Verify Android native prebuild with overridden uuid
+        run: npx expo prebuild --platform android --no-install --non-interactive
+        env:
+          TTOTEM_ANDROID_PACKAGE: ir.ttotem.preview
+      - name: Verify iOS native prebuild with overridden uuid
+        run: npx expo prebuild --platform ios --no-install --non-interactive
+        env:
+          TTOTEM_IOS_BUNDLE_ID: ir.ttotem.preview
       - name: Check reproducible install
         run: npm ci
       - name: Save validated dependency lockfile
