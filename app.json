@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/branding/adaptive-foreground.png",
         "monochromeImage": "./assets/branding/adaptive-monochrome.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "ir.ttotem.app"
     },
     "web": {
       "bundler": "metro",
@@ -43,6 +44,11 @@
       "barStyle": "dark-content",
       "backgroundColor": "#F6F8F6",
       "translucent": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "172f432c-5ef8-4494-a0f5-d9d48ec4c77d"
+      }
     }
   }
 }
