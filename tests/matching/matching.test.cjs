@@ -12,7 +12,7 @@ const react={
 };
 const fill={position:'absolute',top:0,bottom:0,left:0,right:0};
 const rn={
- Image:'Image',View:'View',Pressable:'Pressable',StyleSheet:{absoluteFillObject:fill},
+ Image:'Image',View:'View',Pressable:'Pressable',StyleSheet:{absoluteFill:fill,absoluteFillObject:fill},
  PanResponder:{create:handlers=>({panHandlers:handlers})},
 };
 const colors={primary:'#7755bb',border:'#dedede',surface:'#fff'};
