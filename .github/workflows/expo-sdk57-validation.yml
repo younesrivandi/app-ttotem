@@ -7,6 +7,8 @@ on:
       - 'src/**'
       - 'app/**'
       - 'tsconfig.json'
+      - 'tsconfig.engine-test.json'
+      - 'eslint.config.js'
   workflow_dispatch:
 permissions:
   contents: write
