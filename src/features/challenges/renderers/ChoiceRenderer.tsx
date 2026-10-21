@@ -44,7 +44,7 @@ function ChoiceTile({value,index,selected,disabled,grid,onSelect}:TileProps){
   }}>
   {imageUrl?
    <>
-    <Image source={{uri:imageUrl}} resizeMode="cover" style={StyleSheet.absoluteFillObject}/>
+    <Image source={{uri:imageUrl}} resizeMode="cover" style={StyleSheet.absoluteFill}/>
     {label?<View pointerEvents="none" style={{
       position:'absolute',bottom:0,left:0,right:0,paddingHorizontal:8,paddingVertical:8,
       backgroundColor:'rgba(0,0,0,0.5)',
@@ -53,7 +53,7 @@ function ChoiceTile({value,index,selected,disabled,grid,onSelect}:TileProps){
    </>:
    <ItemLabel value={value} centered/>
   }
-  <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{
+  <View pointerEvents="none" style={[StyleSheet.absoluteFill,{
    borderWidth:selected?3:1,
    borderColor:selected?SELECTED_GREEN:colors.border,
    borderRadius:16,
