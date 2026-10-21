@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/expo-sdk57-validation.yml'
       - 'src/**'
+      - 'app/**'
       - 'tsconfig.json'
   workflow_dispatch:
 permissions:
