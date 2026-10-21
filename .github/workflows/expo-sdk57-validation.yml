@@ -35,8 +35,8 @@ jobs:
             if(pkg.dependencies[name]) pkg.dependencies[name]=version;
             if(pkg.devDependencies[name]) pkg.devDependencies[name]=version;
           }
-          pkg.dependencies.react='19.2.0';
-          pkg.dependencies['react-dom']='19.2.0';
+          pkg.dependencies.react='19.2.3';
+          pkg.dependencies['react-dom']='19.2.3';
           pkg.dependencies['react-native']='0.86.0';
           fs.writeFileSync('package.json',JSON.stringify(pkg,null,2)+'\n');
           const app=JSON.parse(fs.readFileSync('app.json','utf8'));
