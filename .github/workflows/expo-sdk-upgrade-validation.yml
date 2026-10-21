@@ -5,6 +5,7 @@ on:
     branches: [chore/expo-sdk-upgrade-validation]
     paths:
       - '.github/workflows/expo-sdk-upgrade-validation.yml'
+      - 'src/features/challenges/screens/PlayChallengeScreen.tsx'
   workflow_dispatch:
 
 permissions:
