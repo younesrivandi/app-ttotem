@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/expo-sdk57-validation.yml'
       - 'src/**'
+      - 'tests/**'
       - 'app/**'
       - 'tsconfig.json'
       - 'tsconfig.engine-test.json'
