@@ -1,0 +1,93 @@
+name: Build Android APK (Gradle)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev]
+    paths:
+      - '.github/workflows/android-apk.yml'
+      - 'app/**'
+      - 'src/**'
+      - 'assets/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'app.json'
+      - 'app.config.js'
+      - 'babel.config.js'
+      - 'metro.config.js'
+      - 'tsconfig.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CI: '1'
+      APP_ENV: preview
+      EXPO_PUBLIC_API_BASE_URL: https://api.ttotem.ir
+      TTOTEM_ANDROID_PACKAGE: ir.ttotem.app
+      NODE_ENV: production
+    steps:
+      - name: Checkout dev source
+        uses: actions/checkout@v4
+
+      - name: Configure Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Configure Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configure Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci --include=dev
+
+      - name: Validate Expo package versions
+        run: npx expo install --check
+
+      - name: Generate Android native project
+        run: npx expo prebuild --platform android --no-install --non-interactive
+
+      - name: Assemble standalone release APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Verify and stage APK
+        run: |
+          mkdir -p artifacts
+          APK=$(find android/app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | head -n 1)
+          if [ -z "$APK" ]; then
+            echo "::error::No release APK was produced"
+            exit 1
+          fi
+          cp "$APK" artifacts/ttotem-preview-release.apk
+          ls -lh artifacts/
+
+      - name: Upload installable APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ttotem-android-apk-${{ github.run_number }}
+          path: artifacts/ttotem-preview-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+# This workflow is for internal installation/testing only. Expo's generated
+# Android Gradle template may sign release builds with the default debug key.
+# Never distribute this artifact as a Play Store production release.
