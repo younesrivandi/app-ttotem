@@ -35,6 +35,7 @@ jobs:
             if(pkg.dependencies[name]) pkg.dependencies[name]=version;
             if(pkg.devDependencies[name]) pkg.devDependencies[name]=version;
           }
+          for(const peer of ['expo-asset','expo-constants','expo-linking']) pkg.dependencies[peer]=native[peer];
           pkg.dependencies.react='19.2.3';
           pkg.dependencies['react-dom']='19.2.3';
           pkg.dependencies['react-native']='0.86.0';
@@ -42,6 +43,7 @@ jobs:
           const app=JSON.parse(fs.readFileSync('app.json','utf8'));
           delete app.expo.newArchEnabled;
           delete app.expo.android.edgeToEdgeEnabled;
+          delete app.expo.androidNavigationBar;
           fs.writeFileSync('app.json',JSON.stringify(app,null,2)+'\n');
           NODE
           rm -rf node_modules package-lock.json
