@@ -1,0 +1,128 @@
+name: Build iOS Simulator (no Apple Developer account)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev]
+    paths:
+      - '.github/workflows/ios-simulator.yml'
+      - 'app/**'
+      - 'src/**'
+      - 'assets/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'app.json'
+      - 'app.config.js'
+      - 'babel.config.js'
+      - 'metro.config.js'
+      - 'tsconfig.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-simulator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios-simulator:
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      CI: '1'
+      APP_ENV: preview
+      EXPO_PUBLIC_API_BASE_URL: https://api.ttotem.ir
+      TTOTEM_IOS_BUNDLE_ID: ir.ttotem.app
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Inspect Xcode and simulators
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Check Expo dependency versions
+        run: npx expo install --check
+
+      - name: Generate iOS project (no EAS)
+        run: npx expo prebuild --platform ios --no-install --non-interactive
+
+      - name: Install iOS CocoaPods
+        run: cd ios && pod install
+
+      - name: Build unsigned iOS Simulator app
+        run: |
+          set -euo pipefail
+          PROJECT=$(find ios -maxdepth 1 -name '*.xcodeproj' -type d | head -n 1)
+          if [ -z "$PROJECT" ]; then
+            echo "::error::Missing generated Xcode project"
+            exit 1
+          fi
+          SCHEME=$(basename "$PROJECT" .xcodeproj)
+          xcodebuild \
+            -workspace ios/"$SCHEME".xcworkspace \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/ios-build" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Smoke test install and launch on iOS Simulator
+        run: |
+          set -euo pipefail
+          APP=$(find "$RUNNER_TEMP/ios-build/Build/Products/Release-iphonesimulator" -maxdepth 1 -type d -name '*.app' | head -n 1)
+          if [ -z "$APP" ]; then
+            echo "::error::Compiled .app not found"
+            exit 1
+          fi
+          SIMULATOR_ID=$(python3 - <<'PY'
+          import json, subprocess
+          data = json.loads(subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available', '-j']))
+          matches = [(runtime, d['udid']) for runtime, devices in data['devices'].items()
+                     for d in devices if d.get('isAvailable') and 'iPhone' in d.get('name', '')]
+          if not matches:
+              raise SystemExit('No available iPhone simulator on runner')
+          print(sorted(matches)[-1][1])
+          PY
+          )
+          xcrun simctl boot "$SIMULATOR_ID"
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          xcrun simctl install "$SIMULATOR_ID" "$APP"
+          BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APP/Info.plist")
+          xcrun simctl launch "$SIMULATOR_ID" "$BUNDLE_ID"
+          echo "Installed and launched $BUNDLE_ID on $SIMULATOR_ID"
+
+      - name: Package simulator app
+        if: success()
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          APP=$(find "$RUNNER_TEMP/ios-build/Build/Products/Release-iphonesimulator" -maxdepth 1 -type d -name '*.app' | head -n 1)
+          ditto -c -k --sequesterRsrc --keepParent "$APP" artifacts/ttotem-ios-simulator-app.zip
+          ls -lh artifacts/
+
+      - name: Upload simulator build
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ttotem-ios-simulator-${{ github.run_number }}
+          path: artifacts/ttotem-ios-simulator-app.zip
+          if-no-files-found: error
+          retention-days: 14
+
+# The artifact is a zipped .app for iOS Simulator only, NOT an installable
+# iPhone IPA. Simulator builds use CODE_SIGNING_ALLOWED=NO and require no
+# Apple Developer membership. Actual device installs need separate signing.
