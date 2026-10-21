@@ -11,7 +11,7 @@ import { AppThemeProvider, useAppTheme } from '@/theme/ThemeProvider';
 function Navigation() {
   const { colors, resolvedMode } = useAppTheme();
   return <>
-    <StatusBar style={resolvedMode === 'dark' ? 'light' : 'dark'} hidden={false} translucent backgroundColor="transparent" />
+    <StatusBar style={resolvedMode === 'dark' ? 'light' : 'dark'} hidden={false} backgroundColor="transparent" />
     <Stack screenOptions={{headerShown:false,contentStyle:{backgroundColor:colors.background}}}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="login" options={{presentation:'modal'}} />
