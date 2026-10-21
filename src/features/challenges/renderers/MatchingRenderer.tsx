@@ -71,7 +71,7 @@ function MatchTile(props:TileProps){
     alignItems:'center',justifyContent:'center'}}>
    {imageUrl?<>
     <Image source={{uri:imageUrl}} resizeMode="cover" accessible={false}
-     style={StyleSheet.absoluteFillObject}/>
+     style={StyleSheet.absoluteFill}/>
     {label?<View pointerEvents="none" style={{
      position:'absolute',left:0,right:0,bottom:0,
      backgroundColor:'rgba(0,0,0,0.62)',

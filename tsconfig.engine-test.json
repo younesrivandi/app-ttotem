@@ -8,7 +8,8 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
-    "outDir": ".stage11-test-build"
+    "outDir": ".stage11-test-build",
+    "rootDir": "src/features/challenges/engine"
   },
   "include": [
     "src/features/challenges/engine/gameEngine.ts",

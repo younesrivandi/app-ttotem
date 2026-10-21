@@ -6,14 +6,12 @@
     "version": "0.16.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "icon": "./assets/branding/app-icon.png",
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/branding/app-icon.png"
     },
     "android": {
-      "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/branding/adaptive-foreground.png",
         "monochromeImage": "./assets/branding/adaptive-monochrome.png",
@@ -40,9 +38,6 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
-    },
-    "androidNavigationBar": {
-      "enforceContrast": true
     },
     "androidStatusBar": {
       "barStyle": "dark-content",
