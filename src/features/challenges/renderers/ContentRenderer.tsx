@@ -20,10 +20,10 @@ function ContentImage({uri}:{uri:string}){
  return <View style={{flex:1,minHeight:0,width:'100%',backgroundColor:'#181320',overflow:'hidden'}}>
   <Image source={{uri}} resizeMode="cover" blurRadius={24}
    accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-   style={[StyleSheet.absoluteFillObject,{opacity:0.6}]}/>
+   style={[StyleSheet.absoluteFill,{opacity:0.6}]}/>
   <Image source={{uri}} resizeMode="contain"
    accessibilityLabel="تصویر محتوای چالش"
-   style={StyleSheet.absoluteFillObject}/>
+   style={StyleSheet.absoluteFill}/>
  </View>;
 }
 
