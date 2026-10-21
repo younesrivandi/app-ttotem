@@ -16,7 +16,7 @@ permissions:
 jobs:
   sdk57:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -64,6 +64,16 @@ jobs:
         run: npm run export:web
         env:
           EXPO_PUBLIC_API_BASE_URL: https://api.ttotem.ir
+      - name: Bundle Android JS production
+        run: npx expo export --platform android --output-dir dist-android
+      - name: Bundle iOS JS production
+        run: npx expo export --platform ios --output-dir dist-ios
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --no-install --non-interactive
+        env:
+          TTOTEM_ANDROID_PACKAGE: ir.ttotem.preview
+      - name: Assemble native Android debug APK
+        run: cd android && chmod +x gradlew && ./gradlew :app:assembleDebug --no-daemon --stacktrace
       - name: Verify reproducible lockfile
         run: npm ci
       - name: Persist only fully validated migration in isolated branch
