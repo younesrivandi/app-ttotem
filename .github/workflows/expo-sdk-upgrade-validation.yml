@@ -59,6 +59,7 @@ jobs:
           fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');
           const app=JSON.parse(fs.readFileSync('app.json','utf8'));
           delete app.expo.android.edgeToEdgeEnabled; // always on in SDK 55
+          delete app.expo.newArchEnabled; // new architecture is required in SDK 55
           fs.writeFileSync('app.json',JSON.stringify(app,null,2)+'\n');
           NODE
           rm -rf node_modules package-lock.json
