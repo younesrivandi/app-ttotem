@@ -19,7 +19,7 @@ function loadStages(){
 const {stageSchema,isStageLocked,isJourneyStageLocked,completed}=loadStages();
 const stage=(id,status,isLocked,allowResume)=>stageSchema.parse({
  stageId:id,title:'مرحله '+id,order:Number(id),type:'story',
- isLocked,progress:status?{status,allowResume}:undefined,
+ isLocked,progress:status||allowResume?{status,allowResume}:undefined,
 });
 const unlocked=stages=>stages.map((value,index)=>!isJourneyStageLocked(value,index,stages));
 
