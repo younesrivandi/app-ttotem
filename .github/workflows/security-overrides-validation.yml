@@ -1,0 +1,45 @@
+name: Validate Expo 57 security fixes
+on:
+  push:
+    branches: [fix/expo57-security-overrides]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+          cache: npm
+      - name: Refresh lockfile with targeted overrides
+        run: |
+          npm install --package-lock-only
+          npm ci
+      - name: Summarize security findings
+        run: |
+          npm audit --json > /tmp/audit.json || true
+          node -e "const a=require('/tmp/audit.json'); console.log('AUDIT_TOTALS',JSON.stringify(a.metadata?.vulnerabilities)); console.log('DIRECT_ADVISORIES',JSON.stringify(Object.entries(a.vulnerabilities||{}).filter(([k,v])=>v.via.some(i=>typeof i==='object')).map(([k,v])=>({name:k,severity:v.severity,range:v.range}))))"
+          npm ls node-forge braces decode-uri-component uuid || true
+      - name: SDK and application regression checks
+        run: |
+          npx expo install --check
+          npx expo-doctor@latest
+          npm run verify
+          npm run export:web
+          npx expo export --platform android --output-dir dist-android
+          npx expo export --platform ios --output-dir dist-ios
+      - name: Check reproducible install
+        run: npm ci
+      - name: Save validated dependency lockfile
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'security: lock validated patched indirect dependencies'
+            git push origin HEAD:fix/expo57-security-overrides
+          fi
