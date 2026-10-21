@@ -1,0 +1,86 @@
+name: Validate Expo SDK 55 migration (isolated)
+# Temporary migration experiment. Never runs against expo, dev or main.
+on:
+  push:
+    branches: [chore/expo-sdk-upgrade-validation]
+    paths:
+      - '.github/workflows/expo-sdk-upgrade-validation.yml'
+      - 'src/features/challenges/screens/PlayChallengeScreen.tsx'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: npm
+      - name: Install SDK 54 baseline exactly
+        run: npm ci
+      - name: Upgrade all Expo peer dependencies atomically
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const p = JSON.parse(fs.readFileSync('package.json','utf8'));
+          const deps = {
+            expo: '~55.0.0',
+            '@expo/metro-runtime':'~55.0.12',
+            'expo-audio':'~55.0.18',
+            'expo-asset':'~55.0.20',
+            'expo-constants':'~55.0.17',
+            'expo-font':'~55.0.8',
+            'expo-linking':'~55.0.8',
+            'expo-file-system':'~55.0.26',
+            'expo-haptics':'~55.0.18',
+            'expo-navigation-bar':'~55.0.17',
+            'expo-router':'~55.0.18',
+            'expo-secure-store':'~55.0.18',
+            'expo-status-bar':'~55.0.6',
+            'expo-video':'~55.0.21',
+            react:'19.2.0',
+            'react-dom':'19.2.0',
+            'react-native':'0.83.10',
+            'react-native-gesture-handler':'~2.30.0',
+            'react-native-reanimated':'4.2.1',
+            'react-native-screens':'~4.23.0',
+            'react-native-svg':'15.15.3',
+            'react-native-worklets':'0.7.4'
+          };
+          const dev = {'@types/react':'~19.2.10','babel-preset-expo':'~55.0.8','eslint-config-expo':'~55.0.1'};
+          for (const [k,v] of Object.entries(deps)) p.dependencies[k]=v;
+          for (const [k,v] of Object.entries(dev)) p.devDependencies[k]=v;
+          fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');
+          const app=JSON.parse(fs.readFileSync('app.json','utf8'));
+          delete app.expo.android.edgeToEdgeEnabled; // always on in SDK 55
+          delete app.expo.newArchEnabled; // new architecture is required in SDK 55
+          fs.writeFileSync('app.json',JSON.stringify(app,null,2)+'\n');
+          NODE
+          rm -rf node_modules package-lock.json
+          npm install
+      - name: Validate Expo dependencies
+        run: |
+          npx expo install --check
+          npx expo-doctor@latest
+      - name: Run existing regression suite
+        run: npm run verify
+      - name: Check web production bundle
+        run: npm run export:web
+        env:
+          EXPO_PUBLIC_API_BASE_URL: https://api.ttotem.ir
+      - name: Save validated migration only on the isolated branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json app.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: validate Expo SDK 55 upgrade [sdk-upgrade-bot]"
+            git push origin HEAD:chore/expo-sdk-upgrade-validation
+          fi
